@@ -1,0 +1,64 @@
+# ============================================================================
+# 仓库根目录 .gitignore · A-Nips-Diffussion
+# ----------------------------------------------------------------------------
+# 子项目（PROJECT/black/）有自己的 .gitignore，覆盖 PROJECT/ 内部细节；
+# 本文件管的是仓库级别 + 公共开发产物。
+# ============================================================================
+
+# ----- IDE / Editor -----
+.obsidian/
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----- 用户私域目录（AI 不动，git 也不追）-----
+copilot/
+
+# ----- Python（子项目继承用）-----
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+
+# ----- 临时文件 -----
+tmp/
+scratch/
+*.tmp
+.scratch_*
+
+# ----- LaTeX 编译产物（防本地误生成；编译统一在 Overleaf）-----
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.nav
+*.snm
+*.vrb
+
+# ----- 训练大文件 / ckpt（与 PROJECT/black/.gitignore 重复防护）-----
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# ----- 数据集（大文件不入库）-----
+*.npy
+*.npz
+
+# ----- Jupyter -----
+.ipynb_checkpoints/
