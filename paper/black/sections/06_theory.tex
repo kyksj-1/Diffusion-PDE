@@ -1,0 +1,74 @@
+%==============================================================================
+% Section 6 · Theory (~2 pages) ⭐ 论文理论核心
+%
+% 5 个 Theorem，按 path_A_method_skeleton §4：
+%   Thm 1 · Double-Burgers coupling (已在 §4 占位声明 \ref{thm:double-burgers})
+%   Thm 2 · Entropy-solution stability (baseline rate)
+%   Thm 3 · Improved rate with BV-aware parameterization (主定理) ⭐
+%   Thm 4 · Shock-location consistency (R-H + Lax)
+%   Thm 5 · JKO correspondence
+%
+% 每个 Theorem 给 1 段证明 sketch；完整证明在 Appendix A1。
+%==============================================================================
+\section{Theory}
+\label{sec:theory}
+
+\todo{Roadmap paragraph: Theorem~\ref{thm:double-burgers} (in §\ref{sec:double-burgers}) gives the structural foundation. Theorems below sequentially build (i) a baseline stability bound, (ii) the main improved rate that removes the $\exp(\amp)$ blow-up, (iii) shock-location admissibility, and (iv) a JKO-scheme interpretation.}
+
+% ----- Thm 2 · Stability -----
+\begin{theorem}[Entropy-solution stability]
+\label{thm:stability}
+Let the score training error satisfy $\E_{\tau}\|\sth - \score_{\tau}\|^{2} \le \varepsilon^{2}$. Let $\hat u$ be the sample produced by the reverse sampler under the standard parameterization, and $u^{\star}$ the Kruzhkov entropy solution of \eqref{eq:scalar-law}. Then
+\begin{equation}
+\label{eq:thm-stability}
+\Wass{1}\bigl(\Law(\hat u), \Law(u^{\star})\bigr) \le C_{1}\,\varepsilon\,\exp(\amp T),
+\end{equation}
+where $\amp = \sup_{\tau} \snr(\tau)/2$ is the Score Shocks amplification exponent.
+\end{theorem}
+
+\todo{Proof sketch: Gronwall + Score Shocks Theorem 6.3 + Kruzhkov $L^{1}$-contraction. Full proof in Appendix~\ref{appx:proofs:thm-stability}.}
+
+% ----- Thm 3 · Main result -----
+\begin{theorem}[Improved rate via BV-aware parameterization]
+\label{thm:improved-rate}
+Under parameterization \eqref{eq:bv-aware} and loss \eqref{eq:loss-final} with $\lambda_{\mathrm{BV}} > 0$, and under suitable regularity assumptions on the data distribution, we have
+\begin{equation}
+\label{eq:thm-improved}
+\Wass{1}\bigl(\Law(\hat u), \Law(u^{\star})\bigr) \le C_{2}\,\varepsilon^{1/2},
+\end{equation}
+removing the $\exp(\amp T)$ blow-up factor of Theorem~\ref{thm:stability}.
+\end{theorem}
+
+\todo{Proof sketch: parameterization \eqref{eq:bv-aware} inherits the exact tanh interfacial profile from Score Shocks Proposition 5.4, so the Gronwall constant degenerates from $\amp$ to $\mathcal O(1)$. The BV penalty $\lambda_{\mathrm{BV}} \TV(\Dth)$ controls the total variation of $\hat u$, placing it in the $L^{1}$-compact entropy-solution class. Full proof in Appendix~\ref{appx:proofs:thm-improved}.}
+
+\begin{remark}
+\label{rem:tightness}
+\todo{Comment that the rate $\varepsilon^{1/2}$ is consistent with optimal rates for entropy-solution approximation by viscosity methods (e.g., Kuznetsov \citep{kuznetsov1976}). Whether $\varepsilon^{1}$ is achievable under stronger structural assumptions is an open question.}
+\end{remark}
+
+% ----- Thm 4 · Shock location -----
+\begin{theorem}[Shock-location admissibility]
+\label{thm:shock-location}
+In the limit $\sigma(\tau) \to 0$, the shock $x_{s}(t)$ of $\hat u$ satisfies the Rankine–Hugoniot condition
+\begin{equation}
+\label{eq:rh}
+\dot x_{s}(t) = \frac{\flux(u_{L}) - \flux(u_{R})}{u_{L} - u_{R}},
+\end{equation}
+and the Lax entropy condition $\flux'(u_{L}) \ge \dot x_{s} \ge \flux'(u_{R})$ holds almost everywhere.
+\end{theorem}
+
+\todo{Proof sketch: Score Shocks Theorem 5.11 (speciation time) + viscosity-matched schedule \eqref{eq:visc-matched} aligns score-level shock formation with physical-time shock formation. R–H is then inherited from the score-level jump correspondence (Theorem 5.5). Full proof in Appendix~\ref{appx:proofs:thm-shock-location}.}
+
+% ----- Thm 5 · JKO -----
+\begin{theorem}[JKO correspondence]
+\label{thm:jko}
+Under viscosity-matched schedule \eqref{eq:visc-matched} and loss term $\Lburg$, the reverse-time ODE \eqref{eq:reverse-ode} in the time-discretization limit $\Delta\tau \to 0$ corresponds to the JKO step
+\begin{equation}
+\label{eq:jko}
+\rho^{n+1} = \arg\min_{\rho \in \mathcal{P}_{2}}
+            \left\{ \mathcal{F}(\rho) + \frac{1}{2\Delta\tau}\,\Wass{2}^{2}(\rho, \rho^{n}) \right\},
+\end{equation}
+where $\mathcal{F}(\rho) = \Ent(\rho \,|\, \rhotrue) + \langle \text{PDE constraint} \rangle$.
+\end{theorem}
+
+\todo{Proof sketch: classical Jordan–Kinderlehrer–Otto \citep{jko1998} gives the Wasserstein gradient-flow structure of Fokker–Planck; the PDE constraint enters as a Lagrangian multiplier. Full proof in Appendix~\ref{appx:proofs:thm-jko}.}

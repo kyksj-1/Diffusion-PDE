@@ -1,0 +1,53 @@
+%==============================================================================
+% Section 4 · Double-Burgers Structure (~1.5 page) ⭐ 核心观察
+%
+% 这一节是路径 A 的"故事中点"——把 Score Shocks 的 Burgers 等式与目标 PDE 的
+% Burgers 结构耦合起来，呈现"双 Burgers"图景，并给出 Theorem 1。
+%
+% 子节：
+%   §4.1 Score-level Burgers (recap of Score Shocks)
+%   §4.2 Solution-level Burgers (target PDE)
+%   §4.3 Coupling: shock set correspondence + Theorem 1
+%==============================================================================
+\section{The Double-Burgers Structure}
+\label{sec:double-burgers}
+
+% ----- §4.1 Score-level -----
+\subsection{Score-level Burgers}
+\label{sec:db:score-level}
+
+\todo{Recap the Score Shocks identity in one displayed equation:}
+
+\begin{equation}
+\label{eq:score-burgers}
+\dtau \score_{\tau} + 2\,\score_{\tau}\cdot\nabla_{u}\score_{\tau} = \Lap_{u}\score_{\tau},
+\end{equation}
+
+\todo{namely $u := -2\score$ satisfies a viscous Burgers equation in $\tau$. Cite \citep{sarkar2026scoreshocks} and emphasize the resulting tanh-shaped interfacial profile of the score near data modes.}
+
+% ----- §4.2 Solution-level -----
+\subsection{Solution-level Burgers}
+\label{sec:db:soln-level}
+
+\todo{Take the target scalar law \eqref{eq:scalar-law} with $\flux(u) = u^{2}/2$ as the canonical Burgers case. Define the data distribution $\rho_{t}$ at physical time $t$ as the push-forward of the initial-condition distribution $\nu_{0}$ under the PDE flow.}
+
+% ----- §4.3 Coupling + Theorem 1 -----
+\subsection{Coupling: physical and score shock sets coincide}
+\label{sec:db:coupling}
+
+\todo{Geometric picture: the physical shock set $\Shockphys(t) \subset \Omega$ becomes a singular support of $\rho_{t}$, which determines the location of the score-level interfacial layer $\Shockscore(\tau)$. The two Burgers structures are coupled.}
+
+\begin{theorem}[Double-Burgers coupling]
+\label{thm:double-burgers}
+\todo{State the formal statement (see path\_A\_method\_skeleton §4 Theorem 1). Sketch: the joint density $p_{\tau, t}(u) = \rho_{t} \ast \Gtau(u)$ satisfies a coupled system in $(\tau, t)$, with the score in $\tau$ direction obeying \eqref{eq:score-burgers} and the data in $t$ direction obeying the Liouville equation along characteristics.}
+\end{theorem}
+
+\todo{Add a 1-paragraph proof sketch here; full proof in Appendix~\ref{appx:proofs}.}
+
+% ----- Figure placeholder -----
+\begin{figure}[t]
+    \centering
+    \fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{8cm}{0cm}}
+    \caption{\todo{Figure 1: schematic of the double-Burgers coupling. Left: physical solution develops a shock at $x_{s}(t)$. Right: score field develops an interfacial tanh layer at $x_{s}(\tau)$ in diffusion time. Key take-away: the two shock sets are coupled, and our method exploits this geometric correspondence to embed shock structure directly into the score architecture.}}
+    \label{fig:double-burgers-schematic}
+\end{figure}

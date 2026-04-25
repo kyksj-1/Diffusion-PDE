@@ -1,0 +1,42 @@
+%==============================================================================
+% Section 3 · Preliminaries (~0.5 page)
+%
+% 三块前置知识，做最小集合（每块 ~3-5 行 + 一两个 displayed equation）：
+%   §3.1 VE-SDE diffusion model & score matching
+%   §3.2 Hyperbolic conservation laws & Kruzhkov entropy solution
+%   §3.3 Wasserstein distance & BV space
+%==============================================================================
+\section{Preliminaries}
+\label{sec:prelim}
+
+% ----- §3.1 Diffusion -----
+\subsection{Diffusion models and score}
+\label{sec:prelim:diffusion}
+
+\todo{State VE-SDE forward process and the score function $\score_{\tau}(u) = \nabla_{u} \log \ptau(u)$ where $\ptau = \rhotrue \ast \Gtau$. Cite Song et al. and EDM \citep{karras2022edm}. Give the reverse-time SDE in one displayed equation:}
+
+\begin{equation}
+\label{eq:reverse-sde}
+du = -2\,\dot\sigma^{2}(\tau)\,\score_{\tau}(u)\,d\tau + \sqrt{2\,\dot\sigma^{2}(\tau)}\,d\bar W_{\tau}.
+\end{equation}
+
+\todo{Mention denoising score matching loss $\Ldsm$ in one line.}
+
+% ----- §3.2 Hyperbolic PDE -----
+\subsection{Hyperbolic conservation laws and entropy solutions}
+\label{sec:prelim:pde}
+
+\todo{Give the scalar conservation law:}
+
+\begin{equation}
+\label{eq:scalar-law}
+\dt u + \dx \flux(u) = 0, \qquad u(\cdot, 0) = u_{0},
+\end{equation}
+
+\todo{state that classical solutions may fail to exist due to shocks, weak solutions are non-unique, and that uniqueness is restored by the Kruzhkov entropy condition \citep{kruzhkov1970}. State Rankine–Hugoniot and Lax conditions briefly.}
+
+% ----- §3.3 W and BV -----
+\subsection{Wasserstein distance and bounded variation}
+\label{sec:prelim:wbv}
+
+\todo{Define $\Wass{1}(\mu,\nu)$ via Kantorovich–Rubinstein duality and $\BV$ space. Note the $L^{1}$-contraction property of entropy solutions \citep{kruzhkov1970}, which is the cornerstone of the convergence proofs in Section~\ref{sec:theory}.}

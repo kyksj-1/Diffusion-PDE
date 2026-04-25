@@ -1,0 +1,31 @@
+%==============================================================================
+% Section 1 · Introduction (~1 page)
+%
+% 三段式 NeurIPS-intro:
+%   §1.1 GAP — 现有 diffusion PDE solver 在双曲 / shock 场景失效
+%   §1.2 INSIGHT — Score Shocks 的双 Burgers 视角作为理论杠杆
+%   §1.3 CONTRIBUTION — (C1) Double-Burgers coupling
+%                        (C2) BV-aware architecture
+%                        (C3) W_1 收敛率 \mathcal O(\varepsilon^{1/2})
+%
+% 写作时引用：DiffusionPDE \citep{huang2024diffusionpde}, FunDPS \citep{yao2025fundps},
+% Score Shocks \citep{sarkar2026scoreshocks}, FNO \citep{li2021fno}.
+%==============================================================================
+\section{Introduction}
+\label{sec:intro}
+
+% ----- §1.1 GAP -----
+\todo{Write the GAP paragraph: state-of-the-art generative PDE solvers \citep{huang2024diffusionpde, yao2025fundps} achieve SOTA on smooth (elliptic / parabolic / viscous Navier–Stokes) regimes but their performance degrades sharply on hyperbolic conservation laws containing shocks. Concretely, FunDPS does not include any hyperbolic benchmark; DiffusionPDE artificially regularizes Burgers with $\physvis = 10^{-2}$.}
+
+% ----- §1.2 INSIGHT -----
+\todo{Write the INSIGHT paragraph: a recent work \citep{sarkar2026scoreshocks} proves that the score field $\score(\cdot, \tau) = \nabla \log \ptau$ of a VE-SDE diffusion model satisfies a viscous Burgers equation in the diffusion-time direction. When the target PDE is itself Burgers-type (or more generally hyperbolic), this gives rise to a coupled \emph{double-Burgers} structure — one in solution-time $t$, one in diffusion-time $\tau$. We turn this structural observation into an algorithmic and theoretical lever.}
+
+% ----- §1.3 CONTRIBUTION -----
+\todo{Write the CONTRIBUTION paragraph with three bullet points (C1)–(C3).}
+
+\paragraph{Contributions.}
+\begin{itemize}
+    \item \textbf{(C1) Double-Burgers coupling (Theorem~\ref{thm:double-burgers}).} \todo{1 sentence.}
+    \item \textbf{(C2) BV-aware score parameterization (Section~\ref{sec:method}).} \todo{1 sentence.}
+    \item \textbf{(C3) Convergence rate $\Wass{1} \le \mathcal O(\varepsilon^{1/2})$ (Theorem~\ref{thm:improved-rate}).} \todo{1 sentence.}
+\end{itemize}
