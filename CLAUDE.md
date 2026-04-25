@@ -138,6 +138,13 @@ MISSION.md  >  CLAUDE.md  >  MEMORY.md  >  ~/.claude/CLAUDE.md (全局)
 - **图表 caption**：必须包含 *Key take-away message*
 - **引用**：`natbib`，文内统一 `\citet{}`（叙述式）/ `\citep{}`（括号式）
 
+### LaTeX 编译工作流（重要）
+
+- **本地无 LaTeX 编译器**（用户已确认）。AI **不要**在本地执行 `latexmk` / `pdflatex` / `xelatex`，会失败。
+- **编译统一在 Overleaf**：用户手动把 `paper/black/` 内容上传 / 同步到 Overleaf 项目编译。
+- AI 写 `.tex` 时确保**语法可解析**（与官方 `neurips_2026.sty` 兼容），不依赖本地编译验证。
+- **检查方法**：肉眼读 + grep `\todo{` 等占位 + 搜禁用模式（`grep '\\\$\\\$' paper/black/sections/*.tex` 必空、`grep '|' paper/black/sections/*.tex` 在表格内必空）。
+
 ---
 
 ## Git 工作流（项目级）
