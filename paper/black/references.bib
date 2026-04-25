@@ -1,0 +1,154 @@
+%==============================================================================
+% references.bib — EntroDiff
+%
+% 所有引用 key 与 paper/black/sections/*.tex 中的 \citep / \citet 一一对应。
+% 完整 bibinfo 待写作期填充；当前为占位条目，确保编译不报 missing reference。
+%
+% 维护规则：
+%   - 新增 \citep{key} 时同步在此文件加占位条目
+%   - bibinfo 务必从 official venue 抄，不要从 arxiv html 复制（venue 错误是 reviewer 重灾区）
+%==============================================================================
+
+% ----- 直接 baseline / 对标 -----
+@inproceedings{huang2024diffusionpde,
+  title  = {{DiffusionPDE}: Generative {PDE}-Solving Under Partial Observation},
+  author = {TODO},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year   = {2024},
+  note   = {TODO: fill bibinfo from EXAMPLE PAPERS/diffusion\_pde\_generative\_solver.pdf}
+}
+
+@inproceedings{yao2025fundps,
+  title  = {Guided Diffusion Sampling on Function Spaces with Applications to {PDEs}},
+  author = {TODO},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year   = {2025},
+  note   = {TODO: fill bibinfo from EXAMPLE PAPERS/guided\_diffusion\_function\_spaces\_pde.pdf}
+}
+
+% ----- 理论钥匙 -----
+@article{sarkar2026scoreshocks,
+  title   = {Score Shocks: The {Burgers} Equation Structure of Diffusion Generative Models},
+  author  = {Sarkar, TODO},
+  journal = {arXiv preprint arXiv:2604.07404},
+  year    = {2026},
+  note    = {TODO: fill bibinfo from EXAMPLE PAPERS/score\_shocks\_burgers\_structure.pdf}
+}
+
+% ----- 函数空间扩散基线 -----
+@inproceedings{lim2023ddo,
+  title     = {Score-Based Diffusion Models in Function Space ({DDO})},
+  author    = {Lim, TODO},
+  booktitle = {ICML},
+  year      = {2023},
+  note      = {TODO}
+}
+
+% ----- 扩散 / 流匹配的标准引用 -----
+@article{karras2022edm,
+  title   = {Elucidating the Design Space of Diffusion-Based Generative Models},
+  author  = {Karras, Tero and Aittala, Miika and Aila, Timo and Laine, Samuli},
+  journal = {NeurIPS},
+  year    = {2022}
+}
+
+@inproceedings{albergo2024interpolants,
+  title     = {Stochastic Interpolants: A Unifying Framework for Flows and Diffusions},
+  author    = {Albergo, TODO},
+  booktitle = {JMLR},
+  year      = {2024},
+  note      = {TODO: cross-check EXAMPLE PAPERS/stochastic\_interpolants.pdf}
+}
+
+@article{kerrigan2024functionalmf,
+  title   = {Functional Flow Matching},
+  author  = {Kerrigan, TODO},
+  year    = {2024},
+  note    = {TODO}
+}
+
+@article{cfo2025,
+  title   = {{CFO}: Flow-Matched Neural Operators for Time-Continuous {PDE}},
+  author  = {TODO},
+  year    = {2025},
+  note    = {TODO}
+}
+
+@article{unifluids2025,
+  title   = {{UniFluids}: A Unified Conditional Flow-Matching Neural Operator},
+  author  = {TODO},
+  year    = {2025},
+  note    = {TODO}
+}
+
+@article{pdeperspective2025,
+  title   = {A {PDE} Perspective on Generative Diffusion Models},
+  author  = {TODO},
+  year    = {2025},
+  note    = {TODO}
+}
+
+@article{li2021fno,
+  title   = {Fourier Neural Operator for Parametric Partial Differential Equations},
+  author  = {Li, Zongyi and Kovachki, Nikola B. and Azizzadenesheli, Kamyar and Liu, Burigede and Bhattacharya, Kaushik and Stuart, Andrew M. and Anandkumar, Anima},
+  journal = {ICLR},
+  year    = {2021}
+}
+
+% ----- PDE 经典数值 -----
+@article{kruzhkov1970,
+  title   = {First-order quasilinear equations in several independent variables},
+  author  = {Kruzhkov, S. N.},
+  journal = {Mathematics of the {USSR}-Sbornik},
+  volume  = {10},
+  number  = {2},
+  pages   = {217--243},
+  year    = {1970}
+}
+
+@article{kuznetsov1976,
+  title   = {Accuracy of some approximate methods for computing the weak solutions of a first-order quasi-linear equation},
+  author  = {Kuznetsov, N. N.},
+  journal = {USSR Computational Mathematics and Mathematical Physics},
+  volume  = {16},
+  number  = {6},
+  pages   = {105--119},
+  year    = {1976}
+}
+
+@article{shu1999weno,
+  title   = {High order weighted essentially non-oscillatory schemes for convection dominated problems},
+  author  = {Shu, Chi-Wang},
+  journal = {SIAM Review},
+  year    = {2009},
+  note    = {The reference {WENO5} formulation; cite the SIAM Review article. TODO: confirm year.}
+}
+
+@article{cockburn2001dg,
+  title   = {Runge--Kutta discontinuous {Galerkin} methods for convection-dominated problems},
+  author  = {Cockburn, Bernardo and Shu, Chi-Wang},
+  journal = {Journal of Scientific Computing},
+  volume  = {16},
+  number  = {3},
+  pages   = {173--261},
+  year    = {2001}
+}
+
+% ----- JKO -----
+@article{jko1998,
+  title   = {The variational formulation of the {Fokker--Planck} equation},
+  author  = {Jordan, Richard and Kinderlehrer, David and Otto, Felix},
+  journal = {SIAM Journal on Mathematical Analysis},
+  volume  = {29},
+  number  = {1},
+  pages   = {1--17},
+  year    = {1998}
+}
+
+% ----- Deep Kinetic JKO（plasma 相关 baseline）-----
+@article{deepkineticjko,
+  title   = {Deep Kinetic {JKO} schemes for {Vlasov--Fokker--Planck} equations},
+  author  = {TODO},
+  year    = {2026},
+  note    = {arXiv:2603.23901; TODO: confirm authors}
+}

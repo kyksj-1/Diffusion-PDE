@@ -1,0 +1,67 @@
+%==============================================================================
+% macros/notation.tex — 统一项目符号表
+%
+% 设计原则：
+%   1. 与 Docs/black/path_A_method_skeleton.md §3.1 Notation 表保持一致
+%   2. 加宏的目的：(a) 一处改名全文同步 (b) 防止 reviewer 抱怨符号漂移
+%   3. 所有专业符号都通过宏，不直接写裸 LaTeX
+%
+% 修改时务必同步更新 path_A_method_skeleton.md
+%==============================================================================
+
+% ----- 数集 -----
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+
+% ----- 概率 / 测度 -----
+\newcommand{\Law}{\mathrm{Law}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\Wass}[1]{W_{#1}}                 % e.g. \Wass{1}, \Wass{2}
+\newcommand{\TV}{\mathrm{TV}}
+\newcommand{\BV}{\mathrm{BV}}
+\newcommand{\Ent}{\mathrm{Ent}}
+\newcommand{\Lip}{\mathrm{Lip}}
+
+% ----- 分布与路径 -----
+\newcommand{\rhotrue}{\rho^{\star}}             % 目标 PDE 解分布
+\newcommand{\rhotau}{\rho_{\tau}}               % 扩散时间 tau 处的分布
+\newcommand{\ptau}{p_{\tau}}                    % noised density
+\newcommand{\score}{s}                          % score
+\newcommand{\sth}{s_{\theta}}                   % score network
+\newcommand{\Dth}{D_{\theta}}                   % denoiser network
+\newcommand{\sigtau}{\sigma(\tau)}              % 噪声尺度
+\newcommand{\Gtau}{G_{\tau}}                    % heat kernel
+
+% ----- PDE -----
+\newcommand{\dt}{\partial_{t}}
+\newcommand{\dx}{\partial_{x}}
+\newcommand{\dtau}{\partial_{\tau}}
+\newcommand{\Lap}{\Delta}
+\newcommand{\flux}{f}                           % 通量函数 f(u)
+\newcommand{\physvis}{\nu_{\mathrm{phys}}}      % PDE 物理黏性
+\newcommand{\snr}{\mathrm{SNR}}
+\newcommand{\amp}{\Lambda}                      % Score Shocks 的指数放大因子
+
+% ----- 损失 -----
+\newcommand{\Ldsm}{\mathcal{L}_{\mathrm{DSM}}}
+\newcommand{\Lpde}{\mathcal{L}_{\mathrm{PDE}}}
+\newcommand{\Lent}{\mathcal{L}_{\mathrm{ent}}}
+\newcommand{\Lbv}{\mathcal{L}_{\mathrm{BV}}}
+\newcommand{\Lburg}{\mathcal{L}_{\mathrm{Burg}}}
+\newcommand{\Rent}{\mathrm{R}_{\mathrm{ent}}}
+
+% ----- 集合 / 子集 -----
+\newcommand{\Shockphys}{\Sigma_{\mathrm{phys}}}
+\newcommand{\Shockscore}{\Sigma_{\mathrm{score}}}
+
+% ----- 排版小工具 -----
+\newcommand{\eg}{e.g.,\ }
+\newcommand{\ie}{i.e.,\ }
+\newcommand{\cf}{cf.\ }
+
+% ----- 备注高亮（写作期临时使用，提交前删除）-----
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{TODO: }#1}}
+\newcommand{\note}[1]{\textcolor{blue}{[Note: #1]}}
