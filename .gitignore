@@ -35,7 +35,8 @@ tmp/
 scratch/
 *.tmp
 .scratch_*
-pdf_sessions/         # mcp__pdf-vision 工具的临时 session 目录
+# mcp__pdf-vision 工具的临时 session 目录
+pdf_sessions/
 
 # ----- LaTeX 编译产物（防本地误生成；编译统一在 Overleaf）-----
 *.aux
