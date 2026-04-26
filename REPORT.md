@@ -206,3 +206,58 @@ W2 重构后 main body = 6 sections + 3 appendix。已实写部分见 §2.3。
 | 2026-04-26 晚 | MISSION 瘦身、CLAUDE 吸收持续性内容、新增 REPORT；任务范式从"讲义"切换到"撰写+实验" |
 | **2026-04-26（W2 session #N+1）** | **首次进入论文实写**：§1 Introduction / §2 Related Work + Background / §6.1 Double-Burgers Coupling 桥段（含 Thm 1 statement）实写；删除 03/04 作独立 section（结构精简）；references.bib 校验 6 篇核心 PDF 封面；建立 `SYMBOL.md` 全文符号 master sheet；7 个原子 commit 在 `paper/intro-relwork-restruct-20260426` 分支 |
 | W3-W12 | （未来）见 `CLAUDE.md §12 周时间表` |
+
+---
+
+## 7 · §5 Method 与 §6 Theory 章节实写思考（W3 预设 · 给用户参考）
+
+> AI 在 W2 末尾对下一阶段实写的初步设计建议。**用户用作思考参考**，最终结构与重点由用户拍板。所有定理用户仍在证明中，证毕后 AI 会把完整证明从 `Docs/proof/` 迁入 `paper/black/sections/A1_proofs.tex`。
+
+### 7.1 §5 Method（约 2 页）— "调度 → 参数化 → 损失 → 采样" 四件套
+
+主线：把 Theorem 1 的"双 Burgers 几何耦合"翻译为可训练的扩散模型。每子节都给一个 displayed equation 作"卖点锚点"，**不写具体训练超参数**（那些去附录 A3）。
+
+| 子节 | 写什么 | 卖点 / 与定理的对接点 |
+|---|---|---|
+| §5.1 Viscosity-matched noise schedule | $\sigma^{2}(\tau) = 2\,\physvis\,\tau$；调度曲线对比图（EDM cosine vs viscosity-matched）| 让 score-level Burgers 与 solution-level Burgers 共享 viscous profile，使 Theorem 1 耦合在 $\nu$ 同阶时最紧 |
+| **§5.2 BV-aware score parameterization** ⭐ | $\sth = \nabla \phi^{\mathrm{sm}}_{\theta} + \tfrac{\kappa_{\theta}}{2} \tanh(\phi^{\mathrm{sh}}_{\theta}/(2\sigma^2))\,\nabla \phi^{\mathrm{sh}}_{\theta}$；3 子网络（$\phi^{\mathrm{sm}}, \phi^{\mathrm{sh}}, \kappa$）+ 组合层架构图 | 把 Score Shocks Prop. 5.4 的精确 $\tanh$ 形式 hard-code 进网络，从根上 sever Theorem 6.3 的 $\exp(\amp T)$ 放大源（Theorem 3 的 proof 关键步骤所依赖） |
+| §5.3 Loss family | $\mathcal L = \Ldsm + \lambda_{\mathrm{ent}} \Rent + \lambda_{\mathrm{BV}} \TV(\Dth) + \lambda_{\mathrm{Burg}}\,\|\text{score-Burgers residual}\|^2$；4 项的对照表 | 每项打哪个理论靶子：DSM=baseline；ent=Kruzhkov 选择子；BV=$L^1$-紧致约束（Theorem 3 的 Helly 步骤）；Burg=score 落在 (★) 流形上 |
+| §5.4 Reverse-time sampler with Godunov-form guidance | Heun 二阶 ODE + DPS-style guidance；**关键差异**：PDE residual 用 Godunov flux 而非中心差分；Algorithm 1（8–12 行伪代码）| 与 DiffusionPDE 拉开距离的最强卖点 — central-diff 在 shock 处 ill-defined，Godunov flux 是 entropy-consistent；为 Theorem 4（R–H + Lax）提供采样级保障 |
+
+**注意**：§5 的"动机段"应该简短，把"为什么这么设计"留到 §6 Theory 说；§5 重点是**精确陈述算法**。
+
+### 7.2 §6 Theory（约 2 页）— statement-only main body + appendix-heavy
+
+**MISSION 指令**："theory 部分不宜过长，只展现关键的定理以及其步骤、思想。完整详细的内容放在附录"。
+
+| 子节 | Theorem | W2 状态 | main body 写多少 | 附录 A1 写多少 |
+|---|---|---|---|---|
+| §6.1 Double-Burgers coupling | Thm 1 | ✓ 桥段 + statement | 已就（~10 行桥段 + statement + 1 段 sketch） | 完整 ε-δ 证明（~3 页）|
+| §6.2 Stability (baseline rate) | Thm 2 | 仅 statement | 1 段 motivation + statement + 1 段 "Gronwall + Score Shocks Thm 6.3 + Kruzhkov $L^1$" 思想 | 详细 Gronwall 推导（~2 页）|
+| §6.3 **Improved rate** ⭐ | Thm 3 | 仅 statement | 1 段 "BV-aware 让 Λ→O(1)" 直觉 + statement + 1 段 4 阶段思想 sketch（轨迹界 / Kruzhkov / 范数等价 / 三角不等式）+ Remark on tightness（$\varepsilon^{1/2}$ 与 Kuznetsov 速率一致） | **完整证明从 `Docs/proof/Theorem 3 revised.md` 直接迁入 LaTeX**（~6 页含假设 A0–A6）|
+| §6.4 Shock-location admissibility | Thm 4 | 仅 statement | 1 段 motivation + R–H + Lax 公式 + 一句 "Score Shocks Thm 5.11 (speciation) + viscosity-matched alignment" | 速度匹配 + 跳跃对应（~1.5 页）|
+| §6.5 JKO correspondence | Thm 5 | 仅 statement | 1 段 motivation + JKO 步骤公式 + 一句 "经典 JKO + Lagrangian 处理 PDE 约束" | 约束 Lagrangian 推导（~1 页）|
+
+**写作建议**（Anandkumar 风格）：
+1. 每个 theorem 的 main body 总长 ≤ 12 行（包含 statement）。读者读完应能拿到："**陈述 / 关键技术杠杆 / 在 contribution 链中的位置**"三件事，但拿不到完整 proof。
+2. proof sketch 段落不写技术细节，写"**两条思想线**"：(i) 哪些已有结果被组合（Score Shocks Thm 4.3 / 6.3、Kruzhkov $L^1$-contraction、Kuznetsov 1976、JKO 1998）；(ii) 我们引入的关键 step（如 BV-aware → $\Lambda \to \mathcal{O}(1)$）。
+3. 全部细节走 `\ref{appx:proofs:thmN}` 到附录 A1。
+4. **限定词诚实**（CONVENTIONS.md §6）：用 *"under standard regularity"* / *"in the entropy-distribution sense"*；禁 "always" / "guarantees" 滥用。
+
+### 7.3 §5 ↔ §6 ↔ §1 Contribution 的对接
+
+| Contribution | §1 锚 | §5 子节 | §6 子节 |
+|---|---|---|---|
+| (C1) Double-Burgers coupling | (C1) 在 itemize | — | §6.1（Thm 1）|
+| (C2) BV-aware score parameterization | (C2) 在 itemize | §5.2 | §6.3（Thm 3 的 proof 主张依赖 §5.2）|
+| (C3) Improved rate $\Wass{1} \le \mathcal{O}(\varepsilon^{1/2})$ | (C3) 在 itemize | §5.2 + §5.3（BV 正则）| §6.3（Thm 3）|
+
+`Theorem 4` 与 `Theorem 5` 在 contribution 列表里**未出现**（Anandkumar 风格："contribution 列表保持精简，三条卖点 + 一句实验验证"），它们是 Theory 章节的"加法定理"，给 reviewer 看到论文不止一条腿。
+
+### 7.4 用户的下一步参与点
+
+1. **完成 Theorem 1 / 2 / 4 / 5 的 markdown 证明**（用 `Docs/proof/Theorem 3 revised.md` 同样的格式 / 假设体系 / 严谨度）。AI 据此填 §6 main body 思想段 + 整体迁入 A1_proofs.tex。
+2. **拍板 §5.4 是否真引入 Godunov flux 替代 central diff**：这是与 DiffusionPDE 拉开距离的最强卖点，但要求 PROJECT/black/ 实装 Godunov solver（属 W6 工程量）。如果用户希望 W3 优先省事，可暂用 central diff 加 *η-regularization*，把 Godunov 留到实验阶段。
+3. **决定 §5.2 中的 $\phi^{\mathrm{sh}}_\theta$ 表示**：1D signed distance 直观但 2D 工程难（用户身份是物理系学生，工程负担有限）。建议：
+   - 1D Burgers / BL / Sod：直接 signed-distance head（小 MLP 即可）
+   - 2D shallow water（rebuttal 阶段）：用 mesh-based level-set 或 occupancy network 替代
