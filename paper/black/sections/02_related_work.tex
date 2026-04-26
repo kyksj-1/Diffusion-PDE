@@ -1,23 +1,55 @@
 %==============================================================================
-% Section 2 · Related Work (~0.5 page)
+% Section 2 · Related Work and Background (~0.7 page)
 %
-% 4 个分组：
-%   (a) Function-space diffusion: DDO, FunDPS, DiffusionPDE
-%   (b) Flow matching for PDE: CFO, UniFluids, Functional Mean Flow, Stochastic Interpolants
-%   (c) PDE perspective on diffusion: Score Shocks, "Generative diffusion from PDE perspective"
-%   (d) Hyperbolic PDE numerics (only as ground truth): Godunov, WENO, DG
+% NeurIPS 2026 W2 重构：原 03_preliminaries 的 minimal background 已并入本节末
+% 三个 paragraph，03/04 不再作为独立 section。
+%
+% 结构：
+%   §2.0  Related work · 4 组 paragraph
+%       (a) function-space diffusion solvers (DDO / DiffusionPDE / FunDPS)
+%       (b) flow matching for PDE / function spaces (Stochastic Interpolants / FMO)
+%       (c) PDE perspective on diffusion (Score Shocks / chaotic Wasserstein bounds)
+%       (d) hyperbolic conservation laws (WENO / DG / Kruzhkov / Kuznetsov)
+%   §2.1  Background · 3 paragraph
+%       VE-SDE preliminaries
+%       hyperbolic target & entropy admissibility
+%       Wasserstein and BV metrics
+%
+% 引用风格：natbib \citet / \citep；FunDPS（本组前作）严格第三人称。
 %==============================================================================
-\section{Related Work}
-\label{sec:related}
+\section{Related Work and Background}
+\label{sec:related-bg}
 
-% ----- (a) Function-space diffusion -----
-\todo{Group (a): Function-space diffusion solvers — DDO \citep{lim2023ddo}, DiffusionPDE \citep{huang2024diffusionpde}, FunDPS \citep{yao2025fundps}. Acknowledge their Banach-space framework and SOTA on smooth PDEs.}
+\paragraph{Function-space diffusion solvers.}
+Diffusion-based generative models have rapidly become the dominant paradigm for data-driven PDE solving in function space. \citet{lim2023ddo} introduced score-based diffusion on Banach space; \citet{huang2024diffusionpde} demonstrated PDE-residual--guided sampling for forward and inverse problems under partial observation; building on these threads, the \emph{FunDPS} framework of \citet{yao2025fundps} extends Tweedie's posterior sampling to infinite-dimensional Banach spaces and reports state-of-the-art accuracy on five PDE benchmarks at $3\%$ observation density. None of these benchmarks is hyperbolic; the Burgers experiment in \citet{huang2024diffusionpde} fixes $\physvis = 10^{-2}$, sidestepping the inviscid limit at which entropy admissibility becomes the central question. Their PDE-residual term, evaluated by central differences, is silently undefined at shock interfaces---a structural failure mode that motivates this work.
 
-% ----- (b) Flow matching for PDE -----
-\todo{Group (b): Flow matching variants — Stochastic Interpolants \citep{albergo2024interpolants}, Functional Mean Flow \citep{kerrigan2024functionalmf}, CFO \citep{cfo2025}, UniFluids \citep{unifluids2025}. Position our work as orthogonal: structurally aware of shocks, not just architectural variants of flow matching.}
+\paragraph{Flow matching for PDE and function spaces.}
+Stochastic interpolants \citep{albergo2025interpolants} and their function-space lifts unify flows and diffusions and have fuelled a wave of PDE-oriented variants; recent contributions include the residual-augmented flow-matching operators of \citet{bhola2025fmo}, which map low-fidelity surrogates onto the high-fidelity solution manifold. Our contribution is structurally orthogonal to this line: rather than varying the generative dynamics, we retain the VE-SDE machinery and exploit the \emph{intrinsic} Burgers structure of its score field.
 
-% ----- (c) PDE perspective on diffusion -----
-\todo{Group (c): The PDE viewpoint on diffusion models — Score Shocks \citep{sarkar2026scoreshocks} (the theoretical key for this paper), "PDE perspective on generative diffusion" \citep{pdeperspective2025}.}
+\paragraph{The PDE perspective on diffusion.}
+A complementary line treats diffusion models themselves as PDE flows. \citet{sarkar2026scoreshocks} establishes that the score field of a VE-SDE diffusion model satisfies a viscous Burgers equation in diffusion time, develops a detailed theory of score shocks, Rankine--Hugoniot jumps, and a Lax-type entropy condition for diffusion modes, and identifies an $\exp(\amp T)$ error-amplification phenomenon (their Theorem~6.3) that is sharp under standard parameterizations. \citet{armegioiu2026chaotic} establishes Wasserstein-stability bounds for measure-transport samplers of chaotic PDEs, controlling growth via average-strain exponents rather than worst-case Lipschitz constants. We turn the score--Burgers correspondence from a structural observation into both an architectural prior and a sharp convergence rate (Theorem~\ref{thm:improved-rate}).
 
-% ----- (d) Hyperbolic numerics -----
-\todo{Group (d): Classical numerics for hyperbolic conservation laws — Godunov, WENO5 \citep{shu1999weno}, Discontinuous Galerkin \citep{cockburn2001dg}. We use these solely as ground-truth generators and as comparators in the entropy-solution sense.}
+\paragraph{Hyperbolic conservation laws as ground truth.}
+Classical numerics---WENO5 \citep{shu1999weno}, Runge--Kutta discontinuous Galerkin schemes \citep{cockburn2001dg}, and Godunov-type solvers---serve in this paper exclusively as ground-truth generators and as comparators in the entropy-solution sense; we do not propose them as generative baselines. The entropy theory of \citet{kruzhkov1970} and the viscous-approximation rate of \citet{kuznetsov1976} provide the analytical scaffolding for our Theorem~\ref{thm:improved-rate}.
+
+\subsection{Background}
+\label{sec:background}
+
+\paragraph{VE-SDE diffusion preliminaries.}
+We adopt the EDM formulation \citep{karras2022edm}. The forward process injects Gaussian noise of variance $\sigma^{2}(\tau)$ at diffusion time $\tau \in [0, T_{d}]$, yielding the noised density $\ptau = \rhotrue \ast \Gtau$ with associated score field $\score(u, \tau) = \nabla_{u} \log \ptau(u)$. The reverse-time SDE used at inference reads
+\begin{equation}
+  \label{eq:reverse-sde}
+  du = -2\,\dot\sigma^{2}(\tau)\,\score(u, \tau)\,d\tau + \sqrt{2\,\dot\sigma^{2}(\tau)}\,d\bar W_{\tau},
+\end{equation}
+and is trained at the network level by minimising the denoising score-matching loss $\Ldsm$ of $\sth$. We write $\uth$ for the sample produced at $\tau = 0$ under the learned reverse process and $\Law(\uth)$ for its distribution.
+
+\paragraph{Hyperbolic target and entropy admissibility.}
+The target PDE is the scalar conservation law
+\begin{equation}
+  \label{eq:scalar-law}
+  \dt \mathbf{u} + \dx \flux(\mathbf{u}) = 0, \qquad \mathbf{u}(\cdot, 0) = \initdat, \qquad x \in \Omega \subset \R, \quad t \in [0, T_{\mathrm{phys}}],
+\end{equation}
+with $C^{1}$ flux $\flux$ (canonical example: Burgers, $\flux(u) = u^{2}/2$). Classical solutions may break down in finite time and weak solutions are non-unique; the unique admissible entropy solution $\physsol$ is selected by the Kruzhkov condition \citep{kruzhkov1970}, whose semigroup is $L^{1}$-contractive---the structural pivot for our convergence proofs in §\ref{sec:theory}.
+
+\paragraph{Wasserstein and \BV{} metrics.}
+We measure the proximity between generated and target distributions through the 1-Wasserstein distance $\Wass{1}$ in Kantorovich--Rubinstein form, and control the relevant function class through the bounded-variation seminorm $\TV(\cdot)$. The compact embedding $\BV(\Omega) \hookrightarrow L^{1}(\Omega)$ together with Helly's selection theorem provides the relative compactness exploited in §\ref{sec:theory}.
