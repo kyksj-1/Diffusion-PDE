@@ -18,11 +18,11 @@
 |---|---|---|
 | 决策 / 选题 | **100%** | 路径 A 锁定 |
 | 基础设施 / 工作区 | **95%** | paper / PROJECT / 元数据三件套就位；`.gitignore` 根目录尚未建 |
-| 理论证明 | **15%** | Theorem 3 已有 v2 草稿 + critique；Theorem 1, 2, 4, 5 0% |
-| 论文写作 | **5%** | 9 个章节占位骨架，所有内容皆为 `\todo{}` |
+| 理论证明 | **22%** | Theorem 3 v2 草稿 + critique；Theorem 1 statement + 桥段（W2）；Thm 2/4/5 statement，proof sketch 待写 |
+| 论文写作 | **24%** | §1 / §2 / §6.1 实写（W2 重构）；§6.2–§6.5 含 statement；§5 / §7 / §8 仍 `\todo` |
 | 代码实现 | **2%** | 包结构 / 类签名 / 配置 / 测试 stubs 就位；所有核心函数 `raise NotImplementedError` |
 | 实验 | **0%** | 未生成任何数据；未跑任何 baseline |
-| 综合 | **~12%** | 风险按计划可控，理论是 12 周成败决定项 |
+| 综合 | **~22%** | 论文骨架已进入实写阶段，Theorem 3 仍是 12 周成败决定项 |
 
 **最大风险**（截至本报告）：
 
@@ -36,38 +36,44 @@
 
 ### 2.1 决策与方法论
 
-| 事项 | 状态 | 产物 |
-|---|---|---|
-| 投稿目标确认（NeurIPS 2026 双盲）| ✓ | `CLAUDE.md` |
-| 论文方向（路径 A vs B vs C）| ✓ | `Docs/used/idea_originality_analysis.md` |
-| 方法骨架（5 大定理 + 12 周时间表）| ✓ | `Docs/black/path_A_method_skeleton.md` |
-| 角色 / 写作风格（Anima Anandkumar）| ✓ | `MEMORY.md §A` |
-| 用户身份 / 痛点 / 期望（持续）| ✓ | `CLAUDE.md §用户身份` |
+| 事项                          | 状态  | 产物                                       |
+| --------------------------- | --- | ---------------------------------------- |
+| 投稿目标确认（NeurIPS 2026 双盲）     | ✓   | `CLAUDE.md`                              |
+| 方法骨架（5 大定理 + 12 周时间表）       | ✓   | `Docs/black/path_A_method_skeleton.md`   |
+| 角色 / 写作风格（Anima Anandkumar） | ✓   | `MEMORY.md §A`                           |
+| 用户身份 / 痛点 / 期望（持续）          | ✓   | `CLAUDE.md §用户身份`                        |
 
 ### 2.2 文档（教学 / 解读 / 讲义）
 
-| 产物 | 路径 | 备注 |
-|---|---|---|
-| 第一性原理解读（讲给物理系学生）| `Docs/white/路径A_第一性原理解读.md` | 27.6 KB；用户已学完 |
-| 原创性分析 | `Docs/used/idea_originality_analysis.md` | 用户已确认结论 |
-| 方法骨架 | `Docs/black/path_A_method_skeleton.md` | 论文 / 代码 / 证明的唯一坐标系 |
-| L1–L8 旧讲义（reference）| `Docs/black/lectures/L*.md` | 已迁位；用户决定不再新写讲义，保留作参考 |
-| 多环境开发指南 | `Docs/black/多环境开发指南_从第一天就做对.md` | 用户先前提供 |
+| 产物                   | 路径                                       | 备注                   |
+| -------------------- | ---------------------------------------- | -------------------- |
+| 第一性原理解读（讲给物理系学生）     | `Docs/white/路径A_第一性原理解读.md`              | 27.6 KB；用户已学完        |
+| 原创性分析                | `Docs/used/idea_originality_analysis.md` | 用户已确认结论              |
+| 方法骨架                 | `Docs/black/path_A_method_skeleton.md`   | 论文 / 代码 / 证明的唯一坐标系   |
+| L1–L8 旧讲义（reference） | `Docs/black/lectures/L*.md`              | 已迁位；用户决定不再新写讲义，保留作参考 |
+| 多环境开发指南              | `Docs/black/多环境开发指南_从第一天就做对.md`          | 用户先前提供               |
 
 ### 2.3 论文工作区（`paper/black/`）
 
 | 产物 | 状态 |
 |---|---|
-| `neurips_2026.tex` 主控 | ✓ 双盲、natbib、booktabs、amsmath/amsthm、5 个 theorem 环境 |
+| `neurips_2026.tex` 主控 | ✓ 双盲、natbib、booktabs、amsmath/amsthm、5 个 theorem 环境；W2 同步删除 03/04 的 `\input` |
 | `neurips_2026.sty`（官方样式）| ✓ 拷贝自 `paper/2026_template/` |
 | `checklist.tex` | ✓ 拷贝；待写作期填充 |
-| `macros/notation.tex` | ✓ 与 `path_A_method_skeleton §3.1` 符号表对齐 |
-| 8 个 sections 占位 | ✓ 全部 `\todo{}` 标注；intro / related / prelim / double-burgers / method / theory / exp / conclusion |
-| 3 个 appendix 占位 | ✓ proofs / extra-experiments / impl-details |
-| `references.bib` | ✓ 17 个 key 占位（DiffusionPDE / FunDPS / Score Shocks / FNO / EDM / 等）|
+| `macros/notation.tex` | ✓ 与 `Docs/path_A_method_skeleton §3.1` 对齐；W2 新增 `\physsol / \initdat / \uth` |
+| `sections/01_intro.tex` | ✓ **W2 实写**：三段 Gap / Insight / Contribution + (C1)(C2)(C3) 列表 |
+| `sections/02_related_work.tex` | ✓ **W2 重写**：4 组 related work + 3 段 Background（合并自原 §3 prelim）|
+| `sections/03_preliminaries.tex` | **W2 删除**（内容并入 §2.1 Background）|
+| `sections/04_double_burgers.tex` | **W2 删除**（内容并入 §6.1）|
+| `sections/05_method.tex` | 占位 — `\todo` 6 处 |
+| `sections/06_theory.tex` | 部分实写 — §6.1 Double-Burgers Coupling 桥段 + Thm 1 statement（W2）；§6.2–§6.5 仅 Thm statement，proof sketch `\todo` |
+| `sections/07_experiments.tex` | 占位 — `\todo` 7 处 |
+| `sections/08_conclusion.tex` | 占位 — `\todo` 3 处 |
+| 3 个 appendix 占位 | ✓ proofs / extra-experiments / impl-details；`\todo` 共 12 处 |
+| `references.bib` | 部分填 — W2 用 pdf-vision 校验 6 篇 PDF 封面（huang2024diffusionpde / yao2025fundps / sarkar2026scoreshocks / albergo2025interpolants / bhola2025fmo / armegioiu2026chaotic）；其余 6 个 key 仍 TODO |
 | `CONVENTIONS.md` | ✓ 排版强制 / 引用风格 / 占位标记 / 提交前 checklist |
 | `README.md` | ✓ 工作区导航 + latexmk 命令 |
-| 编译测试 | **未跑** — 待 W2 内试编 一次 |
+| 编译测试 | **未跑** — 由用户在 Overleaf 验证 |
 
 ### 2.4 代码工作区（`PROJECT/black/`）
 
@@ -116,21 +122,19 @@
 
 ### 3.2 论文写作（`paper/black/sections/`）
 
-每个章节都是 `\todo{...}` 占位，0 行实际段落。
+W2 重构后 main body = 6 sections + 3 appendix。已实写部分见 §2.3。
 
-| Section | 任务 | 完成度 |
-|---|---|---|
-| 01 Intro | 三段式 Gap / Insight / Contribution | 0% |
-| 02 Related Work | 4 组（function-space diffusion / FM / PDE perspective / 数值）| 0% |
-| 03 Preliminaries | VE-SDE / Kruzhkov / W_1 / BV | 0% |
-| 04 Double-Burgers | Theorem 1 + 几何示意图 | 0% |
-| 05 Method | viscosity-matched + BV-aware + loss family + sampler | 0% |
-| 06 Theory | Theorem 2-5 + 证明 sketch | 0% |
-| 07 Experiments | E1-E3 主结果 + 消融 | 0% |
-| 08 Conclusion | 限制 + future work | 0% |
-| A1 Proofs | 5 大定理完整证明 | 0%（Thm 3 部分有草稿）|
-| A2 Extra Experiments | E4 / E5 留作 rebuttal | 0% |
-| A3 Implementation Details | arch / hyperparams / compute | 0% |
+| Section                   | 任务                                                        | 完成度             |
+| ------------------------- | --------------------------------------------------------- | --------------- |
+| 01 Intro                  | 三段式 Gap / Insight / Contribution                          | **100%**（W2）  |
+| 02 Related Work + Background | 4 组 related work + 3 段 background（VE-SDE / 双曲 / W & BV）   | **100%**（W2）  |
+| 05 Method                 | viscosity-matched + BV-aware + loss family + sampler      | 0%              |
+| 06 Theory                 | Thm 1 桥段 + Thm 2–5 statement + 5 段 proof sketch          | **35%**（W2 完成 Thm 1 桥段 + statement + 全部 sec label；proof sketch 留 `\todo`） |
+| 07 Experiments            | E1-E3 主结果 + 消融                                            | 0%              |
+| 08 Conclusion             | 限制 + future work                                          | 0%              |
+| A1 Proofs                 | 5 大定理完整证明                                                 | 5%（Theorem 3 v2 草稿在 `Docs/proof/`，尚未迁入 LaTeX）|
+| A2 Extra Experiments      | E4 / E5 留作 rebuttal                                       | 0%              |
+| A3 Implementation Details | arch / hyperparams / compute                              | 0%              |
 
 ### 3.3 代码实现（`PROJECT/black/src/entrodiff/`）
 
@@ -177,38 +181,18 @@
 
 ## 4 · 下一步建议（按优先级）
 
-### P0 · 本周必做
 
-1. **Theorem 3 修订**：把 `Docs/proof/Theorem 3 *.md` 迁到 `Docs/black/proofs/thm3.md`，按 critique 6 项修订符号 + 5 项漏洞补丁
-2. **paper/black/ latexmk 编译**：确保现在的占位骨架能编出 PDF（即使所有内容都是 `\todo{}`），把"工程编译"从未知风险变成已验证
-
-### P1 · 本周努力做
-
-3. **`pdes/burgers.py` 实装**：Godunov + WENO5 ground truth 生成器（不超过 200 行 Python）
-4. **`models/score_baseline.py` 实装**：1D U-Net + EDM 标准去噪头，作为 E1 baseline
-
-### P2 · 下周（W3）
-
-5. Theorem 1 + 2 证明定稿
-6. `models/score_bvaware.py` 核心创新实装
-7. E1 跑通（哪怕初版还很粗）
-
-### 不要做的事
-
-- ❌ 写新讲义（用户已决定跳过）
-- ❌ 直接进 E5（plasma）— 那是 rebuttal 加分项
-- ❌ 把 Theorem 3 推迟到所有实验之后 — 它是命门，必须 W4 末定稿
 
 ---
 
 ## 5 · 风险与阻塞（人话版）
 
-| 风险 | 详情 | 应对 |
-|---|---|---|
-| **理论证不出** | Theorem 3 是论文卖点；如果指数因子 $\exp(\Lambda)$ 干不掉，论文价值大幅缩水 | 用户已主动迭代到 v2；保留"退而求次证 $\exp(\Lambda/2)$"的 fallback；最坏情况转投 ICLR 给更多时间 |
-| **时间紧** | 12 周里有大约 10 周可用；3 个实验 + 5 个 theorem + 9 页正文 + 25 页 appendix | E1+E2 锁定必做，E3 努力做，E4/E5 留 rebuttal；理论章节做厚换实验数量 |
-| **审稿人是 baseline 作者** | DiffusionPDE / FunDPS 作者大概率是 reviewer | 主实验直接用他们的公开代码 + 数据当 baseline，杜绝实验细节挑刺 |
-| **AI 喊"完成"** | 之前 commit message 用了 "完成"、"task done" 字样导致 over-claim | 本次起：commit 用"做了什么"动词；进度对账 REPORT；MEMORY R8 监控 |
+| 风险                   | 详情                                                          | 应对                                                                  |
+| -------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------- |
+| **理论证不出** 【已经整出来了！】  | Theorem 3 是论文卖点；如果指数因子 $\exp(\Lambda)$ 干不掉，论文价值大幅缩水         | 用户已主动迭代到 v2；保留"退而求次证 $\exp(\Lambda/2)$"的 fallback；最坏情况转投 ICLR 给更多时间 |
+| **时间紧**              | 12 周里有大约 10 周可用；3 个实验 + 5 个 theorem + 9 页正文 + 25 页 appendix | E1+E2 锁定必做，E3 努力做，E4/E5 留 rebuttal；理论章节做厚换实验数量                      |
+| **审稿人是 baseline 作者** | DiffusionPDE / FunDPS 作者大概率是 reviewer                       | 主实验直接用他们的公开代码 + 数据当 baseline，杜绝实验细节挑刺                               |
+| **AI 喊"完成"**         | 之前 commit message 用了 "完成"、"task done" 字样导致 over-claim       | 本次起：commit 用"做了什么"动词；进度对账 REPORT；MEMORY R8 监控                       |
 
 ---
 
@@ -220,4 +204,60 @@
 | 2026-04-25 | 完成路径 A 第一性原理解读 + 方法骨架；用户开始 Theorem 3 草稿 |
 | **2026-04-26** | 路径 A 决策；paper / PROJECT 工作区基础设施搭建（5 commits 合并到 main）；MISSION/CLAUDE/MEMORY/REPORT 四件套体系建立 |
 | 2026-04-26 晚 | MISSION 瘦身、CLAUDE 吸收持续性内容、新增 REPORT；任务范式从"讲义"切换到"撰写+实验" |
+| **2026-04-26（W2 session #N+1）** | **首次进入论文实写**：§1 Introduction / §2 Related Work + Background / §6.1 Double-Burgers Coupling 桥段（含 Thm 1 statement）实写；删除 03/04 作独立 section（结构精简）；references.bib 校验 6 篇核心 PDF 封面；建立 `SYMBOL.md` 全文符号 master sheet；7 个原子 commit 在 `paper/intro-relwork-restruct-20260426` 分支 |
 | W3-W12 | （未来）见 `CLAUDE.md §12 周时间表` |
+
+---
+
+## 7 · §5 Method 与 §6 Theory 章节实写思考（W3 预设 · 给用户参考）
+
+> AI 在 W2 末尾对下一阶段实写的初步设计建议。**用户用作思考参考**，最终结构与重点由用户拍板。所有定理用户仍在证明中，证毕后 AI 会把完整证明从 `Docs/proof/` 迁入 `paper/black/sections/A1_proofs.tex`。
+
+### 7.1 §5 Method（约 2 页）— "调度 → 参数化 → 损失 → 采样" 四件套
+
+主线：把 Theorem 1 的"双 Burgers 几何耦合"翻译为可训练的扩散模型。每子节都给一个 displayed equation 作"卖点锚点"，**不写具体训练超参数**（那些去附录 A3）。
+
+| 子节 | 写什么 | 卖点 / 与定理的对接点 |
+|---|---|---|
+| §5.1 Viscosity-matched noise schedule | $\sigma^{2}(\tau) = 2\,\physvis\,\tau$；调度曲线对比图（EDM cosine vs viscosity-matched）| 让 score-level Burgers 与 solution-level Burgers 共享 viscous profile，使 Theorem 1 耦合在 $\nu$ 同阶时最紧 |
+| **§5.2 BV-aware score parameterization** ⭐ | $\sth = \nabla \phi^{\mathrm{sm}}_{\theta} + \tfrac{\kappa_{\theta}}{2} \tanh(\phi^{\mathrm{sh}}_{\theta}/(2\sigma^2))\,\nabla \phi^{\mathrm{sh}}_{\theta}$；3 子网络（$\phi^{\mathrm{sm}}, \phi^{\mathrm{sh}}, \kappa$）+ 组合层架构图 | 把 Score Shocks Prop. 5.4 的精确 $\tanh$ 形式 hard-code 进网络，从根上 sever Theorem 6.3 的 $\exp(\amp T)$ 放大源（Theorem 3 的 proof 关键步骤所依赖） |
+| §5.3 Loss family | $\mathcal L = \Ldsm + \lambda_{\mathrm{ent}} \Rent + \lambda_{\mathrm{BV}} \TV(\Dth) + \lambda_{\mathrm{Burg}}\,\|\text{score-Burgers residual}\|^2$；4 项的对照表 | 每项打哪个理论靶子：DSM=baseline；ent=Kruzhkov 选择子；BV=$L^1$-紧致约束（Theorem 3 的 Helly 步骤）；Burg=score 落在 (★) 流形上 |
+| §5.4 Reverse-time sampler with Godunov-form guidance | Heun 二阶 ODE + DPS-style guidance；**关键差异**：PDE residual 用 Godunov flux 而非中心差分；Algorithm 1（8–12 行伪代码）| 与 DiffusionPDE 拉开距离的最强卖点 — central-diff 在 shock 处 ill-defined，Godunov flux 是 entropy-consistent；为 Theorem 4（R–H + Lax）提供采样级保障 |
+
+**注意**：§5 的"动机段"应该简短，把"为什么这么设计"留到 §6 Theory 说；§5 重点是**精确陈述算法**。
+
+### 7.2 §6 Theory（约 2 页）— statement-only main body + appendix-heavy
+
+**MISSION 指令**："theory 部分不宜过长，只展现关键的定理以及其步骤、思想。完整详细的内容放在附录"。
+
+| 子节 | Theorem | W2 状态 | main body 写多少 | 附录 A1 写多少 |
+|---|---|---|---|---|
+| §6.1 Double-Burgers coupling | Thm 1 | ✓ 桥段 + statement | 已就（~10 行桥段 + statement + 1 段 sketch） | 完整 ε-δ 证明（~3 页）|
+| §6.2 Stability (baseline rate) | Thm 2 | 仅 statement | 1 段 motivation + statement + 1 段 "Gronwall + Score Shocks Thm 6.3 + Kruzhkov $L^1$" 思想 | 详细 Gronwall 推导（~2 页）|
+| §6.3 **Improved rate** ⭐ | Thm 3 | 仅 statement | 1 段 "BV-aware 让 Λ→O(1)" 直觉 + statement + 1 段 4 阶段思想 sketch（轨迹界 / Kruzhkov / 范数等价 / 三角不等式）+ Remark on tightness（$\varepsilon^{1/2}$ 与 Kuznetsov 速率一致） | **完整证明从 `Docs/proof/Theorem 3 revised.md` 直接迁入 LaTeX**（~6 页含假设 A0–A6）|
+| §6.4 Shock-location admissibility | Thm 4 | 仅 statement | 1 段 motivation + R–H + Lax 公式 + 一句 "Score Shocks Thm 5.11 (speciation) + viscosity-matched alignment" | 速度匹配 + 跳跃对应（~1.5 页）|
+| §6.5 JKO correspondence | Thm 5 | 仅 statement | 1 段 motivation + JKO 步骤公式 + 一句 "经典 JKO + Lagrangian 处理 PDE 约束" | 约束 Lagrangian 推导（~1 页）|
+
+**写作建议**（Anandkumar 风格）：
+1. 每个 theorem 的 main body 总长 ≤ 12 行（包含 statement）。读者读完应能拿到："**陈述 / 关键技术杠杆 / 在 contribution 链中的位置**"三件事，但拿不到完整 proof。
+2. proof sketch 段落不写技术细节，写"**两条思想线**"：(i) 哪些已有结果被组合（Score Shocks Thm 4.3 / 6.3、Kruzhkov $L^1$-contraction、Kuznetsov 1976、JKO 1998）；(ii) 我们引入的关键 step（如 BV-aware → $\Lambda \to \mathcal{O}(1)$）。
+3. 全部细节走 `\ref{appx:proofs:thmN}` 到附录 A1。
+4. **限定词诚实**（CONVENTIONS.md §6）：用 *"under standard regularity"* / *"in the entropy-distribution sense"*；禁 "always" / "guarantees" 滥用。
+
+### 7.3 §5 ↔ §6 ↔ §1 Contribution 的对接
+
+| Contribution | §1 锚 | §5 子节 | §6 子节 |
+|---|---|---|---|
+| (C1) Double-Burgers coupling | (C1) 在 itemize | — | §6.1（Thm 1）|
+| (C2) BV-aware score parameterization | (C2) 在 itemize | §5.2 | §6.3（Thm 3 的 proof 主张依赖 §5.2）|
+| (C3) Improved rate $\Wass{1} \le \mathcal{O}(\varepsilon^{1/2})$ | (C3) 在 itemize | §5.2 + §5.3（BV 正则）| §6.3（Thm 3）|
+
+`Theorem 4` 与 `Theorem 5` 在 contribution 列表里**未出现**（Anandkumar 风格："contribution 列表保持精简，三条卖点 + 一句实验验证"），它们是 Theory 章节的"加法定理"，给 reviewer 看到论文不止一条腿。
+
+### 7.4 用户的下一步参与点
+
+1. **完成 Theorem 1 / 2 / 4 / 5 的 markdown 证明**（用 `Docs/proof/Theorem 3 revised.md` 同样的格式 / 假设体系 / 严谨度）。AI 据此填 §6 main body 思想段 + 整体迁入 A1_proofs.tex。
+2. **拍板 §5.4 是否真引入 Godunov flux 替代 central diff**：这是与 DiffusionPDE 拉开距离的最强卖点，但要求 PROJECT/black/ 实装 Godunov solver（属 W6 工程量）。如果用户希望 W3 优先省事，可暂用 central diff 加 *η-regularization*，把 Godunov 留到实验阶段。
+3. **决定 §5.2 中的 $\phi^{\mathrm{sh}}_\theta$ 表示**：1D signed distance 直观但 2D 工程难（用户身份是物理系学生，工程负担有限）。建议：
+   - 1D Burgers / BL / Sod：直接 signed-distance head（小 MLP 即可）
+   - 2D shallow water（rebuttal 阶段）：用 mesh-based level-set 或 occupancy network 替代
