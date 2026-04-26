@@ -27,6 +27,23 @@
 
 ## B · 决策日志（按日期倒序）
 
+### 2026-04-26（W2 · session #N+1）· 首次进入论文实写
+
+- **本 session 任务范式**：从"基础设施 + 文档"切换到 LaTeX 实写。MISSION 指令"完成 introduction 和 related work 的写作"。
+- **用户决策（AskUserQuestion 收齐）**：
+  - **Q1 = C**（同步重构方案 Y）：本步在写 01/02 的同时完成结构精简——删除 03_preliminaries.tex 与 04_double_burgers.tex 作独立 section；prelim 内容并入 §2.1 Background；double-Burgers structure 含 Thm 1 statement 实写为 §6.1。
+  - **Q2 = 顺手补全**：用 `pdf-vision` 工具读 6 篇核心 PDF 封面，更新 `references.bib` 至接近 final。
+- **产出（在 `paper/intro-relwork-restruct-20260426` 分支）**：7 个原子 commit
+  1. `docs(plan)` PLAN/W2_intro_relwork_plan.md
+  2. `docs(symbol)` 建立 SYMBOL.md 全文符号 master sheet（含 11 个 `[planned]` 宏）
+  3. `paper(refs)` 校验 6 篇 PDF 封面 + 新增 bhola2025fmo / armegioiu2026
+  4. `refactor(paper)` 删 03/04 + 改 neurips_2026.tex `\input`
+  5. `paper(02)` 重写 §2 为 Related Work and Background（4 + 3 段）
+  6. `paper(06)` 在 §6.1 实写 Double-Burgers Coupling 桥段 + Thm 1 statement
+  7. `paper(01)` 实写 §1 Introduction（Gap / Insight / Contribution）
+- **架构层面**：main body 由 8 sections 精简为 6（§1 / §2 / §5 / §6 / §7 / §8）。intro 中所有 `\ref` 锚已迁移到位。
+- **未做**：`05_method.tex` / `07_experiments.tex` / `08_conclusion.tex` 仍占位；附录全部 `\todo`；本地未编译（用户 Overleaf）。
+
 ### 2026-04-26（晚）· 第二次重组：MISSION 瘦身 + 新增 REPORT
 
 - **关键决策**：
@@ -64,8 +81,9 @@
 ### C.1 当前阶段
 
 - **周次**：W2（12 周时间表的第 2 周；W0–1 已完成）
-- **本阶段主任务**：论文撰写 + 实验启动**双线**（不再写讲义）
-- **下一里程碑**：Theorem 3 主定理定稿 + E1 Burgers 数据 / baseline 跑通
+- **本阶段主任务**：论文撰写 + 实验启动**双线**
+- **本 session（W2 #N+1）已完成**：§1 / §2 / §6.1 实写；结构精简（删 03/04 作独立 section）；refs 校验 6 篇；SYMBOL.md master sheet 建立
+- **下一里程碑**：(i) §5 Method 实写；(ii) Theorem 3 完整证明从 `Docs/proof/Theorem 3 revised.md` 迁入 LaTeX 附录；(iii) Burgers ground truth + EDM baseline 跑通
 
 ### C.2 已完成（详见 REPORT.md §2）
 
@@ -73,14 +91,20 @@
 - 文档：原创性分析、方法骨架、第一性原理解读
 - 模板：NeurIPS 2026 官方模板
 - 工作区：paper/black + PROJECT/black 双骨架
-- 元数据：MISSION / CLAUDE / MEMORY 三件套；REPORT 新增中
-- 用户独立产出：Theorem 3 草稿 v2 + critique（待迁入 `Docs/black/proofs/`）
+- 元数据：MISSION / CLAUDE / MEMORY 三件套；REPORT 体系
+- 用户独立产出：Theorem 3 草稿 v2 + critique + revised 版（在 `Docs/proof/`，待迁入 LaTeX 附录）
+- **W2 session #N+1（2026-04-26）**：
+  - SYMBOL.md 全文符号 master sheet 建立（含 11 个 `[planned]` 宏）
+  - `references.bib` 校验 6 篇核心 PDF 封面（DiffusionPDE / FunDPS / Score Shocks / Stochastic Interpolants / Bhola-Duraisamy FMO / Armegioiu chaotic）
+  - `01_intro.tex`、`02_related_work.tex` 完整实写
+  - `06_theory.tex` §6.1 Double-Burgers Coupling 实写桥段 + Thm 1 statement
+  - `paper/black/sections/{03,04}_*.tex` 删除（结构精简）
+  - `macros/notation.tex` 新增 `\physsol \initdat \uth` 三宏
 
 ### C.3 进行中
 
-- MEMORY / MISSION / CLAUDE 第二次重组（本 session）
-- 新建 REPORT.md
-- L1–L8 lectures 已迁 `Docs/black/lectures/`
+- 等待用户审批将 `paper/intro-relwork-restruct-20260426` 分支合并入 `main`
+- 用户在 main 上仍有 dirty 元数据（CLAUDE / MISSION 与 Docs/proof/* 系列），未纳入本分支
 
 ### C.4 阻塞中
 
@@ -88,7 +112,14 @@
 
 ### C.5 下一步
 
-详见 `MISSION.md §本阶段任务`。优先级：Theorem 3 修订（A 线）> Burgers ground truth + EDM baseline（C/D 线）。
+W2 session #N+1 已完成 intro / related / 桥段实写。**W2 余下 / W3 优先级**：
+
+1. Theorem 3 完整证明从 `Docs/proof/Theorem 3 revised.md` 迁入 `paper/black/sections/A1_proofs.tex`（A 线主定理）
+2. `05_method.tex` 实写（BV-aware parameterization + loss family + sampler）
+3. Theorem 1 / 2 / 4 / 5 的 proof sketch 段落实写（替换 `\todo`）
+4. C/D 线：Burgers ground truth 数据生成 + EDM baseline 跑通（需要进入 PROJECT/black/）
+
+详见 `MISSION.md §本阶段任务` 的下一轮指令。
 
 ---
 
