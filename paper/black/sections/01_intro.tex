@@ -1,31 +1,30 @@
 %==============================================================================
 % Section 1 · Introduction (~1 page)
 %
-% 三段式 NeurIPS-intro:
-%   §1.1 GAP — 现有 diffusion PDE solver 在双曲 / shock 场景失效
-%   §1.2 INSIGHT — Score Shocks 的双 Burgers 视角作为理论杠杆
-%   §1.3 CONTRIBUTION — (C1) Double-Burgers coupling
-%                        (C2) BV-aware architecture
-%                        (C3) W_1 收敛率 \mathcal O(\varepsilon^{1/2})
+% NeurIPS 2026 三段式：
+%   §1.1 Gap          — diffusion {PDE} solver 在 hyperbolic / shock 场景失效
+%   §1.2 Insight      — Score Shocks 揭示双 Burgers 结构作为理论杠杆
+%   §1.3 Contribution — (C1) 耦合定理 / (C2) BV-aware 架构 / (C3) ε^{1/2} 收敛率
 %
-% 写作时引用：DiffusionPDE \citep{huang2024diffusionpde}, FunDPS \citep{yao2025fundps},
-% Score Shocks \citep{sarkar2026scoreshocks}, FNO \citep{li2021fno}.
+% 双盲：禁第一人称 / Anonymous 出现；本组前作引用必须经 \citet
+% 公式：禁 $$，所有 displayed math 用 equation/align
+% 引用：natbib，\citet 叙述式 / \citep 括号式；postnote 用 [Prop.~X]{key} 形式
 %==============================================================================
 \section{Introduction}
 \label{sec:intro}
 
-% ----- §1.1 GAP -----
-\todo{Write the GAP paragraph: state-of-the-art generative PDE solvers \citep{huang2024diffusionpde, yao2025fundps} achieve SOTA on smooth (elliptic / parabolic / viscous Navier–Stokes) regimes but their performance degrades sharply on hyperbolic conservation laws containing shocks. Concretely, FunDPS does not include any hyperbolic benchmark; DiffusionPDE artificially regularizes Burgers with $\physvis = 10^{-2}$.}
+% ----- §1.1 Gap -----
+Generative diffusion models in function space have rapidly become the dominant paradigm for data-driven {PDE} solving, yet their successes concentrate on regimes in which the underlying solutions remain smooth. The state of the art---DiffusionPDE \citep{huang2024diffusionpde} for forward and inverse problems under partial observation, and the FunDPS framework \citep{yao2025fundps} that lifts Tweedie's posterior to infinite-dimensional Banach spaces---reports striking accuracy on Darcy, Helmholtz, and viscous Navier--Stokes benchmarks at $3\%$ observation density. Hyperbolic conservation laws sit outside this comfort zone in two reinforcing senses. \emph{Empirically}, none of the five {PDE} benchmarks of \citet{yao2025fundps} is hyperbolic, and the Burgers experiment of \citet{huang2024diffusionpde} fixes $\physvis = 10^{-2}$ to sidestep the inviscid limit at which entropy admissibility becomes the central question. \emph{Analytically}, prevailing convergence guarantees for diffusion-based {PDE} solvers measure proximity in $L^{2}$, $W_{2}$, or {TV} under classical smoothness assumptions; none accommodates weak solutions, $L^{1}$-contraction, or shock geometry. The shock regime is therefore both an empirical and a theoretical blind spot of generative {PDE} solving.
 
-% ----- §1.2 INSIGHT -----
-\todo{Write the INSIGHT paragraph: a recent work \citep{sarkar2026scoreshocks} proves that the score field $\score(\cdot, \tau) = \nabla \log \ptau$ of a VE-SDE diffusion model satisfies a viscous Burgers equation in the diffusion-time direction. When the target PDE is itself Burgers-type (or more generally hyperbolic), this gives rise to a coupled \emph{double-Burgers} structure — one in solution-time $t$, one in diffusion-time $\tau$. We turn this structural observation into an algorithmic and theoretical lever.}
+% ----- §1.2 Insight -----
+A recent identity reframes the landscape: the score field of a VE-SDE diffusion model itself satisfies a viscous Burgers equation along the diffusion-time axis. Concretely, \citet{sarkar2026scoreshocks} establish that, with $\score(u, \tau) = \nabla_{u} \log \ptau(u)$, the score field obeys $\dtau \score + 2\,\score \cdot \nabla_{u} \score = \Lap_{u} \score$ (cf.~\eqref{eq:score-burgers})---equivalently, $u \mapsto -2\,\score$ is itself a Burgers velocity field in $(u, \tau)$. When the target distribution $\rhotrue$ is supported on solutions of a hyperbolic conservation law of the form~\eqref{eq:scalar-law}, this score-level Burgers structure runs parallel to a solution-level Burgers structure on $(x, t)$---and, in fact, the two are \emph{coupled} (Theorem~\ref{thm:double-burgers}): physical shocks define the singular support of the data law and thereby pin the location of the score-level interfacial layer through the correspondence $\Shockphys(t) \leftrightarrow \Shockscore(\tau)$. This coupling is not a mere curiosity. It is the structural lever that allows shock geometry to be promoted from an obstacle of the smooth-data toolbox to an architectural prior on the score network, and---through that prior---to a sharp Wasserstein rate against the Kruzhkov entropy solution.
 
-% ----- §1.3 CONTRIBUTION -----
-\todo{Write the CONTRIBUTION paragraph with three bullet points (C1)–(C3).}
+% ----- §1.3 Contribution -----
+We turn the double-Burgers correspondence into both an algorithm and a theoretical guarantee; quantitative validation appears in §\ref{sec:experiments}.
 
 \paragraph{Contributions.}
-\begin{itemize}
-    \item \textbf{(C1) Double-Burgers coupling (Theorem~\ref{thm:double-burgers}).} \todo{1 sentence.}
-    \item \textbf{(C2) BV-aware score parameterization (Section~\ref{sec:method}).} \todo{1 sentence.}
-    \item \textbf{(C3) Convergence rate $\Wass{1} \le \mathcal O(\varepsilon^{1/2})$ (Theorem~\ref{thm:improved-rate}).} \todo{1 sentence.}
+\begin{itemize}\setlength{\itemsep}{2pt}
+    \item \textbf{(C1) Double-Burgers coupling (Theorem~\ref{thm:double-burgers}).} We formalise the geometric correspondence between $\Shockphys(t)$ and $\Shockscore(\tau)$ as a coupled Burgers system on $(\tau, t)$, providing the structural foundation for the rest of the paper.
+    \item \textbf{(C2) BV-aware score parameterization (§\ref{sec:method}).} We embed the exact $\tanh$ interfacial profile of the score field \citep[Proposition~5.4]{sarkar2026scoreshocks} directly into the network, decomposing $\sth$ into a smooth potential plus a shock layer modulated by a Rankine--Hugoniot--admissible jump amplitude. This excises the $\exp(\amp T)$ amplification source identified by \citet[Theorem~6.3]{sarkar2026scoreshocks}.
+    \item \textbf{(C3) Improved Wasserstein rate $\Wass{1} \le \mathcal{O}(\varepsilon^{1/2})$ (Theorem~\ref{thm:improved-rate}).} Under (C2) and a {BV} regulariser on the denoiser, we prove that $\Law(\uth)$ converges to the Kruzhkov entropy solution $\physsol$ at rate $\varepsilon^{1/2}$ in the score-matching error, with constants \emph{independent} of the Score-Shocks amplification exponent $\amp$.
 \end{itemize}
