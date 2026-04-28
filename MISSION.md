@@ -4,7 +4,7 @@
 
 ---
 
-## 本阶段任务
+## AI总结本阶段任务
 
 - 本阶段我们先完成论文的写作。我会根据REPORT中的东西对你进行指导
 - [x] 结构修改：03 Preliminaries和04 Double-Burgers不要单独开一个section，部分内容合并到 02 部分内容合并到 Theory部分
@@ -24,57 +24,27 @@
 
 ---
 
-## 本轮产出摘要（2026-04-28 W3）
+## 人类跟进（新任务）
 
-| 文件 | 状态 |
-|---|---|
-| `sections/01_intro.tex` | ✓ 精修（强化 GAP 诊断、符号统一） |
-| `sections/02_related_work.tex` | ✓ 精修（VE-SDE 链补全、宏统一） |
-| `sections/05_method.tex` | ✓ **完整实写**（4 子节 + Table 1 + Algorithm 1） |
-| `sections/06_theory.tex` | ✓ proof sketch 全实写（5 段思想线 + 附录 ref） |
-| `sections/A1_proofs.tex` | ✓ 5 定理完整 LaTeX 证明（5 子文件 + 主控） |
-| `proofs/thm1_proof.tex` | ✓ 290 行 |
-| `proofs/thm2_proof.tex` | ✓ 391 行 |
-| `proofs/thm3_proof.tex` | ✓ 635 行（主定理，待用户 review） |
-| `proofs/thm4_proof.tex` | ✓ 357 行 |
-| `proofs/thm5_proof.tex` | ✓ 471 行 |
-| `macros/notation.tex` | ✓ 11 个 `[planned]` 宏全部落地 |
-| `SYMBOL.md` | ✓ 同步更新 |
-| `PLAN/W3_sections_refine_plan.md` | ✓ 新计划 |
-| `REPORT.md` / `MEMORY.md` | ✓ 全面刷新 |
+当前论文撰写已经搭好框架，在 `D:\A-Nips-Diffussion\paper\black` 中，是完整的论文项目，且单独git管理（已经加入了父文件夹的gitignore），且连接到了远程
 
----
 
-## 注意事项清单（**给下次会话的 AI 用**）
-
-> **2026-04-26 晚定**。
-
-### 不要做的事（别忘）
-
-- ❌ 本地编译 LaTeX（用户用 Overleaf；CLAUDE.md §LaTeX 编译工作流）
-- ❌ 实装 PROJECT/black/ 下任何核心代码（用户：留给后续 session）
-- ❌ 写新讲义
-- ❌ 自动合并 main
-
-### 建议做的事
-
-- ✅ 任何任务遇到大不确定，**停下问用户**（CLAUDE.md "90% 把握再行动"）
-- ✅ 用 sub-agent + worktree 并行修订各阶段
-- ✅ 完成后跑 merge dry-run，等用户审批
-- **同步刷新 REPORT.md §2.6 + MEMORY.md §C**：把 Theorem 3 完成度从 15% 推进到对应数值（视实际进度估）
+- [x] 必须先阅读 `D:\A-Nips-Diffussion\Docs\path_A_method_skeleton.md` 框架，以及目前已经写好的论文，领会我工作的意思
+- [x] 需要你根据我的工作设计代码：
+	- 你的任务是写文档，让别的AI执行。直接跟在CLAUDE.md文件后面
+	- 让AI先选择一名角色进行扮演，要求真实存在，且说明理由
+	- 你来根据论文需求设计实验。
+	- 从最简单的实验开始做起。不设计太多（或或者备注明确这是优先级较低的远期规划），先从最小的、能跑通的、能出结果的开始做起 （MVP思想）
+	- 要有设计思维，尽量要让实验能跑通、让论文站得住脚。同时要提醒AI开发者理解论文、代码实现要贴近论文，产出成果要符合论文
+	- 在开发者文档中，说明可以如何去获取代码、用别人写好的代码或者库（仅仅是给建议，不要写死）
+	- 注意跨环境的工作需求（见 `D:\A-Nips-Diffussion\Docs\多环境开发指南_从第一天就做对.md` ）
+	- 在PLAN中简要（注意，简要！）说说你设计的计划，在我同意后再写CLAUDE.md
+- 代码满足产业需求，工业级别代码
+- 你作为代码专家，代码注释、鲁棒性、git管理、可迁移性等要求，同样再CLAUDE.md中体现
+- 对别的AI的要求要保持我对你的要求，甚至更高
 
 ---
 
-## 历史 · MISSION 已迁出的内容
+现在md文档已经撰写好了，请你开始开发！
 
-> 以下原本在 MISSION.md，现已迁到对应文件，本节仅作迁移备忘。下次清空本文件时可以连这一节一起删。
 
-- 工作区目录约定 → `CLAUDE.md §工作区目录约定`
-- NeurIPS 排版规范 → `CLAUDE.md §NeurIPS 2026 排版规范`
-- 12 周时间表 → `CLAUDE.md §12 周时间表`
-- 用户身份 / 痛点 → `CLAUDE.md §用户身份`
-- 原始 IDEA 演化的归宿 → `CLAUDE.md §原始 IDEA 演化的归宿`
-- 角色选择理由 → `MEMORY.md §A`
-- 决策日志 → `MEMORY.md §B`
-- 风险簿 → `MEMORY.md §D`
-- 进度报告（完成 / 未完成） → `REPORT.md`
