@@ -11,14 +11,14 @@ from src.utils.env_manager import env
 from src.data.burgers_dataset import BurgersDataset
 from src.models.score_param import StandardScore
 from src.diffusion.schedules import ViscosityMatchedSchedule
-from src.diffusion.losses import get_dsm_loss, get_entropy_loss
+from src.diffusion.losses import get_dsm_loss, get_bv_loss
 
 def train_mvp():
     """
     MVP Training Loop for EntroDiff: 
     1. Loads Burgers Data
     2. Uses StandardScore (1D U-Net)
-    3. Optimizes L_DSM + L_ent
+    3. Optimizes L_DSM + L_BV (TV Proxy)
     """
     # 1. Configs
     device = torch.device(env.default_device)
@@ -47,18 +47,19 @@ def train_mvp():
     optimizer = optim.Adam(model.parameters(), lr=lr)
     schedule = ViscosityMatchedSchedule(nu=nu, tau_max=1.0)
     
-    lambda_ent = 0.1
+    lambda_bv = 0.1  # TV penalty (MVP proxy for entropy constraints)
 
     print(f"Starting Training on {device}...")
     for epoch in range(epochs):
         model.train()
         total_loss = 0
         total_dsm = 0
-        total_ent = 0
+        total_bv = 0
         
         for batch in train_loader:
-            # batch is trajectory [B, Nt, Nx]. Target is the distribution of final states.
-            # For simplicity, let's take the final state (u(T)) as our data distribution
+            # target distribution rho_T(u). The paper locks target diffusion distribution
+            # to physical states defined by the terminal time T = 0.5 sec.
+            # We align precisely with this interpretation.
             x = batch[:, -1, :].unsqueeze(1).to(device) # Shape [B, 1, Nx]
 
             optimizer.zero_grad()
@@ -69,21 +70,21 @@ def train_mvp():
             # DSM Loss
             loss_dsm = get_dsm_loss(model, x, sigmas)
             
-            # Kruzhkov Entropy / BV Loss (approx)
-            loss_ent = get_entropy_loss(model, x, sigmas)
+            # BV (Total-Variation) Loss
+            loss_bv = get_bv_loss(model, x, sigmas)
             
-            loss = loss_dsm + lambda_ent * loss_ent
+            loss = loss_dsm + lambda_bv * loss_bv
             
             loss.backward()
             optimizer.step()
             
             total_loss += loss.item()
             total_dsm += loss_dsm.item()
-            total_ent += loss_ent.item()
+            total_bv += loss_bv.item()
 
         avg_loss = total_loss / len(train_loader)
         print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} "
-              f"(DSM: {total_dsm/len(train_loader):.4f}, ENT: {total_ent/len(train_loader):.4f})")
+              f"(DSM: {total_dsm/len(train_loader):.4f}, BV/TV: {total_bv/len(train_loader):.4f})")
 
         # Save Checkpoint
         if (epoch + 1) % 5 == 0:

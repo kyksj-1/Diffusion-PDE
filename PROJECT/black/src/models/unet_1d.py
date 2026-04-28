@@ -68,8 +68,8 @@ class UNet1D(nn.Module):
         self.mid2 = Block1D(dim*4, dim*4, self.time_dim)
         
         # Up
-        self.up1 = Block1D(dim*4 + dim*2, dim*2, self.time_dim)
-        self.up2 = Block1D(dim*2 + dim, dim, self.time_dim)
+        self.up1 = Block1D(dim*4 + dim*4, dim*2, self.time_dim)
+        self.up2 = Block1D(dim*2 + dim*2, dim, self.time_dim)
         self.up3 = Block1D(dim + dim, dim, self.time_dim)
         
         self.final_conv = nn.Conv1d(dim, out_channels, kernel_size=1)
