@@ -35,7 +35,7 @@
 ### 协议优先级（冲突时）
 
 ```
-MISSION.md  >  CLAUDE.md  >  MEMORY.md  >  ~/.claude/CLAUDE.md (全局)
+prompt	>	MISSION.md  >  CLAUDE.md  >  MEMORY.md  >  ~/.claude/CLAUDE.md (全局)
                                             ↑ REPORT 不参与冲突仲裁,纯描述
 ```
 
@@ -152,3 +152,50 @@ MISSION.md  >  CLAUDE.md  >  MEMORY.md  >  ~/.claude/CLAUDE.md (全局)
     - 把可以并行的任务（自行判断）拆成若干相互独立的子任务，在同一条消息里用 `Agent` 工具并行启动多个 subagent，每个调用都加 `isolation: "worktree"`，让每个 subagent 在独立的 git worktree 中工作。全部完成后，进行合并，然后把每个 subagent 产出的分支名、路径、改动摘要列表给我
     - 也可使用 `/parallel` slash 命令
 - **绝对避免**："任务完成"≠"骨架搭好"。一篇 NeurIPS 论文是 12 周的工作。任何"完成"声明都要对照 `REPORT.md` 的诚实进度，不要 over-claim
+
+---
+
+## 注意事项补充清单（**给下次会话的 AI 用**）
+
+> **2026-04-26 晚定**。
+
+### 不要做的事（别忘）
+
+- ❌ 本地编译 LaTeX（用户用 Overleaf；CLAUDE.md §LaTeX 编译工作流）
+- ❌ 实装 PROJECT/black/ 下任何核心代码（用户：留给后续 session）
+- ❌ 写新讲义
+- ❌ 自动合并 main
+
+### 建议做的事
+
+- ✅ 任何任务遇到大不确定，**停下问用户**（CLAUDE.md "90% 把握再行动"），使用askquestion功能
+- ✅ 用 sub-agent + worktree 并行修订各阶段
+- ✅ 完成后跑 merge dry-run，等用户审批
+- **同步刷新 REPORT.md §2.6 + MEMORY.md**
+
+---
+
+## W4 实验代码开发专项协议 (给代码 AI 的指令)
+
+> **当前阶段核心目标**: 依据 `paper/black/sections/03_method.tex` 完成 EntroDiff 的 MVP (最小可行产品) 代码实现与对比实验。
+
+### 1. 角色设定
+- **扮演角色**：Zongyi Li (李宗沂，Caltech / NVIDIA，FNO 核心一作)。
+- **扮演理由**：拥有 AI4PDE 领域最顶级的工程落地能力（参考 `neuraloperator` 库），编码风格严谨、数学推导扎实，能够在保障工业级代码规范（如 OOP 设计、多端解耦）的同时，完美复刻前沿数学方程。
+
+### 2. 实验设计与 MVP 思想
+- **任务范围**：锁定 **1D Inviscid Burgers Equation**，出图对比 shock 捕捉能力。
+- **对比基线**：Baseline (纯 EDM $\mathcal{L}_{\mathrm{DSM}}$) vs Ours (MVP版: $\mathcal{L}_{\mathrm{DSM}} + \mathcal{L}_{\mathrm{ent}}$ + Viscosity-matched + Godunov guidance)。
+- **切忌过度工程 (Over-engineering)**：保持代码结构清晰可扩展（`configs/`, `src/`, `scripts/` 分离），但**不要**一上来就写沉重的庞大框架（如复杂的 registry 或冗余的抽象类）。优先跑通最简单的端到端训练与采样。最复杂的 Parameterization C (以 Tanh 拟合冲击波) 作为进阶规划，初期切勿实装以免卡住主干流程。
+
+### 3. 环境与硬件约束 (核心痛点)
+- **跨环境平滑迁移**：当前在 PC 端（RTX 4060，算力/显存极度有限）开发测试。代码必须考虑到后续向 Colab / Kaggle / 服务器的无缝迁移。
+- **配置解耦**：严格遵循 `Docs/多环境开发指南_从第一天就做对.md`，务必通过 `configs/env_config.yaml` 集中管理环境，**严禁在代码中写死绝对路径**。
+- **资源限制**：选择轻量级 1D U-Net 作为 Backbone。实验配置（Batch Size、Epoch 等）要分为 `mvp_pc_test` 和 `full_server_run`，PC 端侧重功能打通，控制显存开销不超过 8GB。
+
+### 4. 论文忠实度与外部库复用
+- **理论严格对齐**：动手前必须仔细阅读 `03_method.tex`。Loss 的实现和公式（特别是 $\mathcal{L}_{\mathrm{ent}}$ 和 Godunov flux）必须**在代码注释中给出对应的 LaTeX 公式 / 论文章节号**，逻辑保证一一对应。
+- **不做重复造轮子**：建议直接复用 `diffusers` (如 `UNet1DModel` 魔改)、利用 `PyClaw` 或现成经典开源数值 PDE 求解器生成 Ground Truth 数据方案。
+- **Git 管理**：在工业标准的加持下，保持原子化 commit 和子分支（`feat/mvp-...`）管理，不搞大版本“坨交”。
+
+
