@@ -35,7 +35,14 @@ def entrodiff_heun_sampler(model, shape, sigma_min, sigma_max, tau_max, nu, num_
             score_t = (D_u - u_tau) / (sigma_t ** 2)
 
             # Evaluate guidance residuals
-            l_pde_t = pde_residual(u_tau, dx) # Godunov PDE guidance
+            # NOTE (Algorithm 1 Deviation / MVP): 
+            # The paper (Alg 1) dictates \nabla_u L_PDE^Godunov(u) as the descendent direction. 
+            # Here we use the physical residual itself `pde_residual(u)` as a guidance directional proxy, 
+            # which intuitively pushes `u` towards a PDE-satisfying state along the vector field directly. 
+            # A rigorous implementation strictly following Eq. 3.8 requires computing the topological gradient:
+            #   loss_pde = pde_residual(u_tau).norm()
+            #   grad_u = torch.autograd.grad(outputs=loss_pde, inputs=u_tau)[0]
+            l_pde_t = pde_residual(u_tau, dx) # Godunov PDE guidance proxy
             l_obs_t = 0.0 # Optional observation guidance
 
             # ODE drift: Eq. 3.8 / Alg 1

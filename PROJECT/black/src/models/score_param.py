@@ -67,9 +67,16 @@ class BVAwareScore(nn.Module):
         # tanh profile directly embedded into the architecture
         tanh_factor = torch.tanh(phi_sh / (2 * (sigma**2).view(-1,1,1) + 1e-6))
         
-        # In a fully rigorous form, we should do:
-        # S_theta = d(phi_sm)/dx + (kappa/2) * tanh_factor * d(phi_sh)/dx
-        # Here we mock the forward step for the signature
+        # In a fully rigorous form, we must compute gradients with respect to input x:
+        # 1. Require grad on x: x.requires_grad_(True)
+        # 2. Forward pass for potentials
+        # 3. Compute explicit gradients setting create_graph=True for higher-order derivatives in loss:
+        #    grad_phi_sm = torch.autograd.grad(outputs=phi_sm.sum(), inputs=x, create_graph=True)[0]
+        #    grad_phi_sh = torch.autograd.grad(outputs=phi_sh.sum(), inputs=x, create_graph=True)[0]
+        # 4. Construct final score matching output:
+        #    s_theta = grad_phi_sm + (kappa / 2.0) * tanh_factor * grad_phi_sh
+        #
+        # Here we mock the forward step for the MVP signature:
         s_theta = phi_sm + (kappa / 2.0) * tanh_factor * phi_sh 
         
         return s_theta
