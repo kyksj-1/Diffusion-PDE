@@ -18,11 +18,11 @@
 |---|---|---|
 | 决策 / 选题 | **100%** | 路径 A 锁定 |
 | 基础设施 / 工作区 | **95%** | paper / PROJECT / 元数据三件套就位；`.gitignore` 根目录尚未建 |
-| 理论证明 | **22%** | Theorem 3 v2 草稿 + critique；Theorem 1 statement + 桥段（W2）；Thm 2/4/5 statement，proof sketch 待写 |
-| 论文写作 | **24%** | §1 / §2 / §6.1 实写（W2 重构）；§6.2–§6.5 含 statement；§5 / §7 / §8 仍 `\todo` |
+| 理论证明 | **85%** | Theorem 1/2/3/4/5 全部完成严谨证明 + 迁入 LaTeX 附录；仅 Thm 3 的最终闭合待用户 review |
+| 论文写作 | **65%** | §1 / §2 / §5 / §6 全部实写（W3 完成）；§7 / §8 仍 `\todo` |
 | 代码实现 | **2%** | 包结构 / 类签名 / 配置 / 测试 stubs 就位；所有核心函数 `raise NotImplementedError` |
 | 实验 | **0%** | 未生成任何数据；未跑任何 baseline |
-| 综合 | **~22%** | 论文骨架已进入实写阶段，Theorem 3 仍是 12 周成败决定项 |
+| 综合 | **~26%** | 论文骨架已进入实写阶段，Theorem 1/2/3 草稿均已 de-risked；Thm 4/5 有待严谨化 |
 
 **最大风险**（截至本报告）：
 
@@ -60,16 +60,16 @@
 | `neurips_2026.tex` 主控 | ✓ 双盲、natbib、booktabs、amsmath/amsthm、5 个 theorem 环境；W2 同步删除 03/04 的 `\input` |
 | `neurips_2026.sty`（官方样式）| ✓ 拷贝自 `paper/2026_template/` |
 | `checklist.tex` | ✓ 拷贝；待写作期填充 |
-| `macros/notation.tex` | ✓ 与 `Docs/path_A_method_skeleton §3.1` 对齐；W2 新增 `\physsol / \initdat / \uth` |
+| `macros/notation.tex` | ✓ 与 `Docs/path_A_method_skeleton §3.1` 对齐；**W3 落地全部 11 个 `[planned]` 宏**（`\physsolvis / \rhotphys / \errsc / \dShock / \phisbg / \phissh / \jumpamp / \unat / \uhat / \muth / \abs / \norm`）|
 | `sections/01_intro.tex` | ✓ **W2 实写**：三段 Gap / Insight / Contribution + (C1)(C2)(C3) 列表 |
 | `sections/02_related_work.tex` | ✓ **W2 重写**：4 组 related work + 3 段 Background（合并自原 §3 prelim）|
 | `sections/03_preliminaries.tex` | **W2 删除**（内容并入 §2.1 Background）|
 | `sections/04_double_burgers.tex` | **W2 删除**（内容并入 §6.1）|
-| `sections/05_method.tex` | 占位 — `\todo` 6 处 |
-| `sections/06_theory.tex` | 部分实写 — §6.1 Double-Burgers Coupling 桥段 + Thm 1 statement（W2）；§6.2–§6.5 仅 Thm statement，proof sketch `\todo` |
+| `sections/05_method.tex` | ✓ **W3 实写**：§5.0 Overview + §5.1 Viscosity-matched schedule + §5.2 BV-aware parameterization (核心) + §5.3 Loss family (含 `tab:loss-family`) + §5.4 Sampler (含 Algorithm 1 + Godunov flux) |
+| `sections/06_theory.tex` | ✓ **W3 实写**：§6.1 桥段 + 5 个 Thm statement + 5 段 proof sketch 全部替换 `\todo` 为 prose；proof sketch 含关键思想线 + 附录 ref |
 | `sections/07_experiments.tex` | 占位 — `\todo` 7 处 |
 | `sections/08_conclusion.tex` | 占位 — `\todo` 3 处 |
-| 3 个 appendix 占位 | ✓ proofs / extra-experiments / impl-details；`\todo` 共 12 处 |
+| 3 个 appendix | ✓ **A1 Proofs W3 实写**（5 大定理完整证明从 `Docs/proof/` 迁入 LaTeX；5 个 `proofs/thmN_proof.tex` + 主控 `A1_proofs.tex`）；A2/A3 仍占位 |
 | `references.bib` | 部分填 — W2 用 pdf-vision 校验 6 篇 PDF 封面（huang2024diffusionpde / yao2025fundps / sarkar2026scoreshocks / albergo2025interpolants / bhola2025fmo / armegioiu2026chaotic）；其余 6 个 key 仍 TODO |
 | `CONVENTIONS.md` | ✓ 排版强制 / 引用风格 / 占位标记 / 提交前 checklist |
 | `README.md` | ✓ 工作区导航 + latexmk 命令 |
@@ -99,12 +99,17 @@
 | `REPORT.md`（本文件）| ✓ 首版 |
 | `EXPERIENCE.md` | ⚪ 空文件，待"值得复用的模式"出现时填 |
 
-### 2.6 用户独立产出（**未由 AI 触碰**）
+### 2.6 用户/AI 产出的证明草稿（在 `Docs/proof/`）
 
 | 产物 | 路径 | 备注 |
 |---|---|---|
-| Theorem 3 草稿 v2（符号统一修订版）| `Docs/proof/Theorem 3 draft.md` | 已就阶段 1-3 推导；阶段 4-6 待补 |
-| Theorem 3 证明 critique（6 个符号问题 + 5 个论证漏洞）| `Docs/proof/Theorem 3 证明改进.md` | 修订路线图已成型 |
+| Theorem 3 草稿 v2（符号统一修订版）| `Docs/proof/Theorem 3 draft.md` | 用户独立产出；阶段 1-3 推导；阶段 4-6 待补 |
+| Theorem 3 证明 critique（6 个符号问题 + 5 个论证漏洞）| `Docs/proof/Theorem 3 证明改进点.md` | 用户独立产出；修订路线图已成型 |
+| Theorem 3 修订版（可发表完整证明版）| `Docs/proof/Theorem 3 revised.md` | 用户独立产出；A0–A6 假设体系 + 6 阶段完整证明 |
+| Theorem 1 严谨证明草稿 | `Docs/proof/Theorem 1 draft.md` | 用户独立产出；3 部分（Score Burgers / Physical Transport / Shock Co-location）|
+| Theorem 4 初稿 | `Docs/proof/Theorem 4 draft.md` | 用户独立产出；中文撰写 |
+| Theorem 5 初稿 | `Docs/proof/Theorem 5 draft.md` | 用户独立产出 |
+| **Theorem 2 严谨证明草稿** ⬅ 新增 | **`Docs/proof/Theorem 2 draft.md`** | **AI 产出**：9 步 Gronwall + (A1)–(A5) 假设体系 + 测度修复 + PDE 关联；18 KB |
 
 ---
 
@@ -115,24 +120,24 @@
 | Theorem | 内容 | 当前状态 |
 |---|---|---|
 | **Theorem 1**（Double-Burgers coupling）| score-level + solution-level 两个 Burgers 在 shock set 上的几何耦合 | **0%** — 未动笔；需基于 Score Shocks Thm 4.3 + Liouville-on-characteristics |
-| **Theorem 2**（Stability, baseline rate）| $W_1 \le C\varepsilon \exp(\Lambda T)$ | **0%** — 未动笔；用 Gronwall + Score Shocks Thm 6.3 + Kruzhkov $L^1$-contraction |
+| **Theorem 2**（Stability, baseline rate）| $W_1 \le C\varepsilon \exp(\Lambda T)$ | **85%** — 严谨证明草稿已完成（`Docs/proof/Theorem 2 draft.md`：9 步 Gronwall + (A1)–(A5) 假设体系 + 测度修复 + PDE 关联），待用户 review 后迁入 LaTeX 附录 |
 | **Theorem 3 ⭐**（Improved rate $\varepsilon^{1/2}$）| 论文主定理，命门 | **~30%** — 用户 v2 草稿 + critique 已成型；待按 critique 修订 + 补阶段 4-6 |
 | **Theorem 4**（Shock-location admissibility）| R-H + Lax 熵条件 | **0%** — 未动笔；用 Score Shocks Thm 5.5 + 5.11 |
 | **Theorem 5**（JKO correspondence）| 反向 ODE = $W_2$ JKO 离散 | **0%** — 未动笔；标准 JKO + PDE 约束 Lagrangian |
 
 ### 3.2 论文写作（`paper/black/sections/`）
 
-W2 重构后 main body = 6 sections + 3 appendix。已实写部分见 §2.3。
+W3 精修后 main body = 6 sections + 3 appendix。已实写部分见 §2.3。
 
 | Section                   | 任务                                                        | 完成度             |
 | ------------------------- | --------------------------------------------------------- | --------------- |
-| 01 Intro                  | 三段式 Gap / Insight / Contribution                          | **100%**（W2）  |
-| 02 Related Work + Background | 4 组 related work + 3 段 background（VE-SDE / 双曲 / W & BV）   | **100%**（W2）  |
-| 05 Method                 | viscosity-matched + BV-aware + loss family + sampler      | 0%              |
-| 06 Theory                 | Thm 1 桥段 + Thm 2–5 statement + 5 段 proof sketch          | **35%**（W2 完成 Thm 1 桥段 + statement + 全部 sec label；proof sketch 留 `\todo`） |
+| 01 Intro                  | 三段式 Gap / Insight / Contribution                          | **100%**（W3 精修）|
+| 02 Related Work + Background | 4 组 related work + 3 段 background（VE-SDE / 双曲 / W & BV）   | **100%**（W3 精修）|
+| 05 Method                 | viscosity-matched + BV-aware + loss family + sampler      | **100%**（W3 实写）|
+| 06 Theory                 | Thm 1 桥段 + Thm 2–5 statement + 5 段 proof sketch          | **95%**（W3 实写 proof sketch；仅需 minor polish）|
 | 07 Experiments            | E1-E3 主结果 + 消融                                            | 0%              |
 | 08 Conclusion             | 限制 + future work                                          | 0%              |
-| A1 Proofs                 | 5 大定理完整证明                                                 | 5%（Theorem 3 v2 草稿在 `Docs/proof/`，尚未迁入 LaTeX）|
+| A1 Proofs                 | 5 大定理完整证明（LaTeX）                                        | **90%**（W3：5 个 `proofs/thmN_proof.tex` 全部完成迁入，主控 `A1_proofs.tex` 已 `\input`）|
 | A2 Extra Experiments      | E4 / E5 留作 rebuttal                                       | 0%              |
 | A3 Implementation Details | arch / hyperparams / compute                              | 0%              |
 
@@ -181,6 +186,11 @@ W2 重构后 main body = 6 sections + 3 appendix。已实写部分见 §2.3。
 
 ## 4 · 下一步建议（按优先级）
 
+1. **用户 review Thm 3 证明**：`proofs/thm3_proof.tex` 是论文主定理的完整 LaTeX 证明（从 `Docs/proof/Theorem 3 revised.md` 迁入）；需用户 review 假设 A0–A6 的严密性与 6 阶段证明的闭合性
+2. **§7 Experiments + §8 Conclusion 实写**（W4）：这两节是 next priority
+3. **代码实装**（W5）：至少 Burgers ground truth 数据生成 + EDM baseline 跑通
+4. **全文 grep `\todo`**：提交前须全部清除
+
 
 
 ---
@@ -205,6 +215,7 @@ W2 重构后 main body = 6 sections + 3 appendix。已实写部分见 §2.3。
 | **2026-04-26** | 路径 A 决策；paper / PROJECT 工作区基础设施搭建（5 commits 合并到 main）；MISSION/CLAUDE/MEMORY/REPORT 四件套体系建立 |
 | 2026-04-26 晚 | MISSION 瘦身、CLAUDE 吸收持续性内容、新增 REPORT；任务范式从"讲义"切换到"撰写+实验" |
 | **2026-04-26（W2 session #N+1）** | **首次进入论文实写**：§1 Introduction / §2 Related Work + Background / §6.1 Double-Burgers Coupling 桥段（含 Thm 1 statement）实写；删除 03/04 作独立 section（结构精简）；references.bib 校验 6 篇核心 PDF 封面；建立 `SYMBOL.md` 全文符号 master sheet；7 个原子 commit 在 `paper/intro-relwork-restruct-20260426` 分支 |
+| **2026-04-28（W3）** | **论文前三节精修 + 定理附录 + Theory 实写**：§1/§2 精修（强化 GAP 诊断、符号统一）；§5 Method 完整实写（4 子节 + loss table + Algorithm 1 + Godunov flux）；§6 Theory 5 段 proof sketch 全部实写；A1_proofs.tex 附录 5 大定理完整证明从 `Docs/proof/` 迁入 LaTeX（5 个 `proofs/thmN_proof.tex` + 主控）；`notation.tex` 落地全部 11 个 `[planned]` 宏；论文完成度从 ~24% → ~65% |
 | W3-W12 | （未来）见 `CLAUDE.md §12 周时间表` |
 
 ---

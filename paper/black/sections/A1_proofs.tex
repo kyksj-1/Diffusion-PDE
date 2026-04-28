@@ -1,27 +1,33 @@
 %==============================================================================
-% Appendix A1 · Proofs
+% Appendix A1 · Complete Proofs of Theorems 1–5
 %
-% Theorem 1-5 的完整证明（不计入 9 页正文）。每个证明留独立 section 占位。
+% 每个 Theorem 的 proof sketch 在 §6 main body 中；
+% 完整 ε-δ 推导在此附录。
 %==============================================================================
-\section{Proofs}
+\section{Proofs of Main Theorems}
 \label{appx:proofs}
 
+% ----- A1.1 · Theorem 1 · Double-Burgers coupling -----
 \subsection{Proof of Theorem~\ref{thm:double-burgers} (Double-Burgers coupling)}
-\label{appx:proofs:thm-double-burgers}
-\todo{Full proof. Reference Score Shocks \citep{sarkar2026scoreshocks} Theorem 4.3 for the $\tau$-direction, and Liouville-on-characteristics for the $t$-direction. Then verify compatibility on the shock set.}
+\label{appx:proofs:thm1}
+\input{proofs/thm1_proof.tex}
 
+% ----- A1.2 · Theorem 2 · Entropy-solution stability -----
 \subsection{Proof of Theorem~\ref{thm:stability} (Entropy-solution stability)}
-\label{appx:proofs:thm-stability}
-\todo{Full proof. Steps: (i) reverse-time SDE error decomposition; (ii) Gronwall in $\Wass{2}$ with $\amp$ as the growth rate (per Score Shocks Theorem 6.3); (iii) translate $\Wass{2}$ to $\Wass{1}$ on bounded domain; (iv) use Kruzhkov $L^{1}$-contraction to bound the law-distance to the entropy solution.}
+\label{appx:proofs:thm2}
+\input{proofs/thm2_proof.tex}
 
+% ----- A1.3 · Theorem 3 · Improved rate (main result) ⭐ -----
 \subsection{Proof of Theorem~\ref{thm:improved-rate} (Improved rate)}
-\label{appx:proofs:thm-improved}
-\todo{Full proof — \emph{this is the technical heart of the paper}. Steps: (i) parameterization \eqref{eq:bv-aware} fixes the tanh interfacial profile, eliminating the $\amp$-source in Theorem~\ref{thm:stability}; (ii) BV penalty $\TV(\Dth) \le M$ gives compactness in $L^{1}$; (iii) interpolation between $\Wass{2}$ and $L^{1}$-contraction yields the $\varepsilon^{1/2}$ rate; (iv) sharpness discussion vs. Kuznetsov \citep{kuznetsov1976}.}
+\label{appx:proofs:thm3}
+\input{proofs/thm3_proof.tex}
 
+% ----- A1.4 · Theorem 4 · Shock-location admissibility -----
 \subsection{Proof of Theorem~\ref{thm:shock-location} (Shock-location admissibility)}
-\label{appx:proofs:thm-shock-location}
-\todo{Full proof. Use Score Shocks Theorem 5.5 (jump correspondence) and Theorem 5.11 (speciation time). Show that under \eqref{eq:visc-matched} the speciation time aligns with physical-time shock formation. R–H follows from cross-shock mass conservation; Lax follows from monotonicity of the score-level flux.}
+\label{appx:proofs:thm4}
+\input{proofs/thm4_proof.tex}
 
+% ----- A1.5 · Theorem 5 · JKO correspondence -----
 \subsection{Proof of Theorem~\ref{thm:jko} (JKO correspondence)}
-\label{appx:proofs:thm-jko}
-\todo{Full proof. Standard JKO \citep{jko1998} for Fokker–Planck; we add the PDE constraint as a Lagrangian penalty and verify that the proximal step under viscosity-matched schedule is a discrete time-step of the Wasserstein gradient flow of $\mathcal{F}$.}
+\label{appx:proofs:thm5}
+\input{proofs/thm5_proof.tex}

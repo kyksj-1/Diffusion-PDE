@@ -38,6 +38,11 @@
 \usepackage{graphicx}
 \graphicspath{{figures/}}
 
+% 算法伪代码与证明符号
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{stmaryrd}       % \llbracket, \rrbracket 等
+
 %------------------------------------------------------------------------------
 % 项目自定义宏（专业符号统一）
 %------------------------------------------------------------------------------
@@ -58,7 +63,7 @@
 %------------------------------------------------------------------------------
 % 标题与作者（双盲提交占位）
 %------------------------------------------------------------------------------
-\title{Shock-Aware Diffusion Solvers for Hyperbolic PDEs:\\A Double-Burgers Perspective}
+\title{EntroDiff: Taming Hyperbolic Shocks via Double-Burgers Coupling}
 
 % 双盲：占位作者；camera-ready 时再换上真实作者块
 \author{%
@@ -82,10 +87,10 @@
 %------------------------------------------------------------------------------
 \input{sections/01_intro.tex}
 \input{sections/02_related_work.tex}
-\input{sections/05_method.tex}
-\input{sections/06_theory.tex}
-\input{sections/07_experiments.tex}
-\input{sections/08_conclusion.tex}
+\input{sections/03_method.tex}
+\input{sections/04_theory.tex}
+\input{sections/05_experiments.tex}
+\input{sections/06_conclusion.tex}
 %------------------------------------------------------------------------------
 
 \begin{ack}

@@ -4,54 +4,50 @@
 
 ---
 
-## 一句话现状
+## 本阶段任务
 
-**W2 · 论文撰写 + 实验启动同步推进**：路径 A 已选定（EntroDiff），基础设施就位，进入"写论文 + 跑实验"双线作战。
-
----
-
-## 本阶段任务（W2）
-
-### 双线并行（推荐用 worktree 隔离开两个分支）
-
-| # | 线 | 任务 | 产物 | 优先级 |
-|---|---|---|---|---|
-| **A** | 论文（理论）| Theorem 3 主定理草稿迭代——**用户已有 v2 + critique 在 `Docs/proof/`**，需按 critique 修订 | `Docs/black/proofs/thm3.md` | **P0** |
-| B | 论文（写作）| `paper/black/sections/01_intro.tex` 与 `05_method.tex` 草稿 | 替换 `\todo{}` 为真正段落 | P1 |
-| C | 代码（baseline）| 复现 EDM + DiffusionPDE，作为 E1 baseline | `PROJECT/black/src/entrodiff/models/score_baseline.py` 实装 + smoke test | P1 |
-| D | 代码（数据）| 实装 `pdes/burgers.py` Godunov + WENO5 ground truth | `PROJECT/black/src/entrodiff/pdes/burgers.py` + 通过 `tests/test_pdes.py` | P0（C 的前置）|
-
-### 本 session 下一动作
-
-1. 把 `Docs/proof/` 下的 Theorem 3 草稿 + critique 迁到 `Docs/black/proofs/`（统一归位）
-2. 决定先做哪条线（A vs C/D）；建议 **A 优先**——理论一旦定稿，后续 method/experiments 章节可大量复用其符号与 lemma
+- 本阶段我们先完成论文的写作。我会根据REPORT中的东西对你进行指导
+- [x] 结构修改：03 Preliminaries和04 Double-Burgers不要单独开一个section，部分内容合并到 02 部分内容合并到 Theory部分
+- [x] 论文前三节精修 (§1 Introduction / §2 Related Work / §5 Methodology)
+- [x] 定理处理：5 大定理证明从 `Docs/proof/` 完整迁入 LaTeX 附录 `A1_proofs.tex`
+- [x] §5 Method 完整实写（4 子节 + loss table + Algorithm 1 + Godunov flux）
+- [x] §6 Theory 5 段 proof sketch 全部实写
+- [x] notation.tex 全部 11 个 `[planned]` 宏落地
+- [ ] §7 Experiments 实写（W4 待办）
+- [ ] §8 Conclusion 实写（W4 待办）
+- [ ] 全文 `\todo{}` 清除 + 最终 polish
+- 数学符号：
+  - **全文已统一**。`SYMBOL.md` 已建立并维护；所有 `[planned]` 宏已落地 `notation.tex`
+  - 确保符号高级性，保持数学味儿和行业黑话，体现出专业感
+- 具体的语言可以参照 EXAMPLE PAPERS 文件夹中的内容。里面写得很好，可以加油，参考它们的语言和华丽程度
+- 如果涉及到五大定理中的任意一项，需要引用、或者本身需要提及，先在后面留一个占位符；或者干脆本段注释相关的内容等我完成。证明已经证了很多了
 
 ---
 
-## 下次 session 接力清单（**给下次会话的 AI 用**）
+## 本轮产出摘要（2026-04-28 W3）
 
-> **2026-04-26 晚定**。下次会话进来后，按 `CLAUDE.md §启动 session 必读顺序` 读完 4 个 .md 之后，从这里开始执行。
-> 用户指示："不能一次性做这么多工作。把想法、计划和任务写好就够了，下一个会话会解决的。"
+| 文件 | 状态 |
+|---|---|
+| `sections/01_intro.tex` | ✓ 精修（强化 GAP 诊断、符号统一） |
+| `sections/02_related_work.tex` | ✓ 精修（VE-SDE 链补全、宏统一） |
+| `sections/05_method.tex` | ✓ **完整实写**（4 子节 + Table 1 + Algorithm 1） |
+| `sections/06_theory.tex` | ✓ proof sketch 全实写（5 段思想线 + 附录 ref） |
+| `sections/A1_proofs.tex` | ✓ 5 定理完整 LaTeX 证明（5 子文件 + 主控） |
+| `proofs/thm1_proof.tex` | ✓ 290 行 |
+| `proofs/thm2_proof.tex` | ✓ 391 行 |
+| `proofs/thm3_proof.tex` | ✓ 635 行（主定理，待用户 review） |
+| `proofs/thm4_proof.tex` | ✓ 357 行 |
+| `proofs/thm5_proof.tex` | ✓ 471 行 |
+| `macros/notation.tex` | ✓ 11 个 `[planned]` 宏全部落地 |
+| `SYMBOL.md` | ✓ 同步更新 |
+| `PLAN/W3_sections_refine_plan.md` | ✓ 新计划 |
+| `REPORT.md` / `MEMORY.md` | ✓ 全面刷新 |
 
-### 起手 4 步（按顺序）
+---
 
-1. **迁移 Theorem 3 草稿**：
-   ```bash
-   mkdir -p Docs/black/proofs
-   git mv "Docs/proof/Theorem 3 draft.md"       "Docs/black/proofs/thm3_draft_v2.md"
-   git mv "Docs/proof/Theorem 3 证明改进.md"     "Docs/black/proofs/thm3_critique.md"
-   rmdir Docs/proof
-   ```
-   归位后 commit：`docs(proofs): 迁移 Theorem 3 草稿与 critique 至 Docs/black/proofs/`
+## 注意事项清单（**给下次会话的 AI 用**）
 
-2. **精读 Theorem 3 v2 + critique**：把 6 项符号问题 + 5 项论证漏洞列成 todo 清单（写入新建的 `Docs/black/proofs/thm3_revision_plan.md`）
-
-3. **按 critique 修订**：在 `Docs/black/proofs/thm3_v3.md` 出 v3 草稿，逐项消除 critique 中的问题
-   - 符号体系全文统一（按 `paper/black/macros/notation.tex` 与 `Docs/black/path_A_method_skeleton.md §3.1`）
-   - 阶段 4–6 推导补全（v2 似乎只到阶段 3）
-   - 主定理陈述与论文 `paper/black/sections/06_theory.tex` Theorem 3 完全对齐
-
-4. **同步刷新 REPORT.md §2.6 + MEMORY.md §C**：把 Theorem 3 完成度从 15% 推进到对应数值（视实际进度估）
+> **2026-04-26 晚定**。
 
 ### 不要做的事（别忘）
 
@@ -62,15 +58,10 @@
 
 ### 建议做的事
 
-- ✅ 如果 Theorem 3 修订到一半遇到大不确定，**停下问用户**（CLAUDE.md "90% 把握再行动"）
-- ✅ 用 sub-agent + worktree 并行修订各阶段（Theorem 3 草稿很长，可拆）
+- ✅ 任何任务遇到大不确定，**停下问用户**（CLAUDE.md "90% 把握再行动"）
+- ✅ 用 sub-agent + worktree 并行修订各阶段
 - ✅ 完成后跑 merge dry-run，等用户审批
-
----
-
-## 接下来（W3 之后）
-
-参见 `CLAUDE.md §12 周时间表`。**当前不需要重复**——只在切阶段时刷新本文件的"本阶段任务"。
+- **同步刷新 REPORT.md §2.6 + MEMORY.md §C**：把 Theorem 3 完成度从 15% 推进到对应数值（视实际进度估）
 
 ---
 

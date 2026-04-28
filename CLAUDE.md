@@ -15,27 +15,22 @@
     - 讲解类内容，拒绝"行业黑话"，要从第一性原理讲清讲透；输出归位 `Docs/white/`
     - 论文生成类任务，必须严谨专业，高度符号化，并且与论文上下文符号、思路对齐
 - 当你有疑问的时候，可以向我询问进行确认（如 `AskUserQuestion` 工具）。当你有 90% 以上的把握理解我的意图时再开始行动
+- 开始前除了md文档外要扫读关键内容、真实项目进度（很有可能项目先进于当前文档）
 
 ---
 
 ## 项目根目录文件分工（重要 · 启动每个 session 必读）
 
-| 文件 | 阅读对象 | 性质 | 何时更新 |
-|---|---|---|---|
-| `MISSION.md` | AI | **当前阶段指令**（即写即用即换） | 用户每次切换阶段 / 当前任务时 |
-| `CLAUDE.md`（本文件） | AI | **持续性协议**（一切不变的规则） | 协议本身变更时（不频繁） |
-| `MEMORY.md` | **AI** | 决策日志 / 状态 / 风险 / 行动 hints | 重大决策 / 里程碑 / 风险变化 / 阶段切换 |
-| `REPORT.md` | **人** | 诚实进度报告（完成 / 未完成 / 阻塞） | 同 MEMORY 节奏；语言用人话，可直接给导师看 |
-| `EXPERIENCE.md` | 跨 session 的 AI | 工具调用 / 复用模式 | 仅当出现"值得别的 agent 复用"的经验时 |
+| 文件                            | 阅读对象           | 性质                        | 何时更新                       |
+| ----------------------------- | -------------- | ------------------------- | -------------------------- |
+| `MISSION.md`                  | AI & 人         | **当前阶段指令**（即写即用即换）        | 主要人进行更新，AI负责执行，并review是否完成 |
+| `CLAUDE.md`（本文件）              | AI             | **持续性协议**（一切不变的规则）        | 协议本身变更时（不频繁）               |
+| `MEMORY.md`                   | **AI**         | 决策日志 / 状态 / 风险 / 行动 hints | 重大决策 / 里程碑 / 风险变化 / 阶段切换   |
+| `REPORT.md`                   | **人**          | 诚实进度报告（完成 / 未完成 / 阻塞）     | 同 MEMORY 节奏；语言用人话，可直接给导师看  |
+| `EXPERIENCE.md`               | 跨 session 的 AI | 工具调用 / 复用模式               | 仅当出现"值得别的 agent 复用"的经验时    |
+| `Docs/path_A_method_skeleton` | AI 略读 作为实时回顾   | 总论文框架                     |                            |
 
-### 启动 session 必读顺序
-
-```
-1. MISSION.md   (我现在该做什么？)
-2. REPORT.md    (项目整体到哪儿了？给人的视角)
-3. MEMORY.md    (我作为 AI 应该知道的决策与风险)
-4. CLAUDE.md    (规则)
-```
+每次会话后记得更新上述文档，其中REPORT MEMEORY 为强制更新 
 
 ### 协议优先级（冲突时）
 
@@ -76,28 +71,7 @@ MISSION.md  >  CLAUDE.md  >  MEMORY.md  >  ~/.claude/CLAUDE.md (全局)
 | 等离子体 / 核聚变数据 | E5 Vlasov-Poisson 加分项 |
 | 流形角度 | 暂不进路径 A，留 future work |
 
-### 12 周时间表（来自 `Docs/black/path_A_method_skeleton.md §6`，**已根据用户 2026-04-26 决策更新**）
-
-| 周 | 阶段 | 主任务（更新后） | 关键产物 |
-|---|---|---|---|
-| W0–1（已完成） | 决策 + 基础设施 | 路径 A 选定 + paper/PROJECT 工作区搭建 | `MISSION/CLAUDE/MEMORY/REPORT.md` + 5 commits |
-| **W2（当前）** | **论文撰写 + 实验启动** | **同步推进**：① intro/method 草稿 ② Theorem 3 草稿迭代（已有 v2 + critique）③ E1 Burgers 数据生成 + EDM baseline 复现 | `paper/black/sections/01,05.tex`, `Docs/black/proof/thm3.md`, `PROJECT/black/...` |
-| W3 | 论文 + 代码 | Theorem 1, 2 证明定稿；BV-aware parameterization 实现 | `Docs/black/proofs/`, `models/score_bvaware.py` |
-| W4 | 论文 + 代码 | Theorem 3 主定理定稿；E1 跑通 | `Docs/black/proofs/thm3.md`, `Output/balck/E1/` |
-| W5 | 实验 | E2 Buckley-Leverett 跑通；Theorem 4 草稿 | `Output/balck/E2/`, `Docs/black/proofs/thm4.md` |
-| W6 | 实验 | E3 Euler/Sod 跑通；Theorem 5 (JKO) 草稿 | `Output/balck/E3/`, `Docs/black/proofs/thm5.md` |
-| W7 | 写作 | Intro / Method / Theory 章节 v1 | `paper/black/v1.pdf` |
-| W8 | 写作 | Experiments / Conclusion 章节；消融 | `paper/black/v1.pdf` |
-| W9 | 打磨 | 通稿 + 自审 + 修订 | `paper/black/v2.pdf` |
-| W10 | 检查 | 9 页限制压缩；Checklist 完成；双盲检查 | `paper/black/v3.pdf` |
-| W11 | 提交 | 上传至 OpenReview；Appendix 整理 | NeurIPS 投稿成功 |
-| W12 | rebuttal 准备 | 补 E4 / E5 实验、应对潜在 reviewer 问题 | `Output/balck/E4_E5/` |
-
-> 说明：原 W1-W4 写讲义阶段已**取消**（用户 2026-04-26 决定），改为论文撰写 + 实验同步推进。L1-L8 旧讲义保留在 `Docs/black/lectures/` 作 reference。
-
----
-
-## 工作区目录约定（强制）
+## 工作区目录约定
 
 | 目录 | 用途 |
 |---|---|

@@ -27,6 +27,22 @@
 
 ## B · 决策日志（按日期倒序）
 
+### 2026-04-28（W3）· 论文前三节精修 + 定理附录完整迁入 LaTeX
+
+- **本 session 任务**：用户 5 点指令——(1) 完善 §1/§2/§5 + 定理入附录，(2) NeurIPS 2026 格式，(3) 更新进度文档，(4) 继写 §6 Theory，(5) 已知证明在 `Docs/proof/`。
+- **执行策略**：顺序执行（宏 → 精修 §1/§2 → 实写 §5 → 定理迁入 LaTeX → §6 proof sketch → 刷新文档），定理迁入用 3 个并行 sub-agent 同步完成。
+- **产出**：
+  1. `macros/notation.tex`：落地全部 11 个 `[planned]` 宏（`\physsolvis / \rhotphys / \errsc / \dShock / \phisbg / \phissh / \jumpamp / \unat / \uhat / \muth / \abs / \norm`）；同步 SYMBOL.md §12（删 `[planned]` 标记）+ §15 变更日志
+  2. `01_intro.tex`：精修 GAP 段（补齐 central-diff 诊断）、Insight 段（精确 eq ref）、Contribution 列表换用 `T_{d}`
+  3. `02_related_work.tex`：精修 VE-SDE prelim 段（补热方程 → Cole-Hopf 链）、全面使用 `\initdat / \physsol` 宏
+  4. `05_method.tex`：完整实写 4 子节——§5.0 Overview（5 行 lead-in）、§5.1 Viscosity-matched schedule（10 行 + eq）、§5.2 BV-aware parameterization（18 行 + eq + 3 子网络说明）、§5.3 Loss family（12 行 + eq + Table 1 + \Rent 定义）、§5.4 Sampler（14 行 + eq:reverse-ode + Godunov flux + Algorithm 1）
+  5. `A1_proofs.tex`：5 个 `proofs/thmN_proof.tex` 子文件全部从 `Docs/proof/` Markdown 迁入 LaTeX（Thm 1: 290 行 / Thm 2: 391 行 / Thm 3: 635 行 / Thm 4: 357 行 / Thm 5: 471 行），主控 `A1_proofs.tex` 完成 `\input` 编排
+  6. `06_theory.tex`：5 个 proof sketch 段全部替换 `\todo`（每段 6–8 行思想线 + 附录 ref）
+  7. `REPORT.md`：§1 摘要完成度更新（理论 85% / 论文 65%）、§2.3 刷新、§3.2 百分比全表更新、§4 下一步建议、§6 里程碑
+  8. `PLAN/W3_sections_refine_plan.md`：新计划文档
+- **未做**：§7/§8 仍占位；本地编译未跑（用户 Overleaf）；未合并分支
+- **论文完成度**：从 ~24% 提升至 ~65%（§1/§2/§5/§6/A1 全部实写，仅 §7/§8/A2/A3 待写）
+
 ### 2026-04-26（W2 · session #N+1）· 首次进入论文实写
 
 - **本 session 任务范式**：从"基础设施 + 文档"切换到 LaTeX 实写。MISSION 指令"完成 introduction 和 related work 的写作"。
@@ -43,6 +59,18 @@
   7. `paper(01)` 实写 §1 Introduction（Gap / Insight / Contribution）
 - **架构层面**：main body 由 8 sections 精简为 6（§1 / §2 / §5 / §6 / §7 / §8）。intro 中所有 `\ref` 锚已迁移到位。
 - **未做**：`05_method.tex` / `07_experiments.tex` / `08_conclusion.tex` 仍占位；附录全部 `\todo`；本地未编译（用户 Overleaf）。
+
+### 2026-04-27（W2 · session #N+2）· Theorem 2 严谨证明草稿完成
+
+- **任务**：用户提供 Theorem 2 证明思路（~353 行），要求提取严谨化为 formal proof draft
+- **产出**：`Docs/proof/Theorem 2 draft.md`（18 KB）
+  - 完整 9 步证明：同步耦合 → 传播误差 → score 误差 → 期望 → 测度修复 → 合并不等式 → Cauchy–Schwarz → Gronwall → W₁ 上界
+  - 5 条假设 (A1)–(A5)：score Lipschitz / schedule 有界 / 训练误差 L² / 分布稳定性（KR 对偶）/ 网络 Lipschitz
+  - 关键技术步：**测度不一致修复**（Step 5）通过 Kantorovich–Rubinstein 控制将 `E_{\hat{u}}` 转为 `E_{u^♮}` + O(δ) 修正，闭合 Gronwall 循环
+  - PDE Connection 节：Kruzhkov L¹-收缩性确保数值解误差不传播
+  - 符号完全对齐 SYMBOL.md / notation.tex / 已有 Theorem 1 draft 格式
+- **未做**：未迁入 LaTeX 附录（与 Thm 1/3/4/5 的迁入同步进行）；未本地编译
+- **依赖**：需用户 review 确认假设 (A4)–(A5) 的表述与物理含义，以及 Gronwall 反向方向正确性
 
 ### 2026-04-26（晚）· 第二次重组：MISSION 瘦身 + 新增 REPORT
 
@@ -80,10 +108,10 @@
 
 ### C.1 当前阶段
 
-- **周次**：W2（12 周时间表的第 2 周；W0–1 已完成）
+- **周次**：W3（12 周时间表的第 3 周；W0–2 已完成）
 - **本阶段主任务**：论文撰写 + 实验启动**双线**
-- **本 session（W2 #N+1）已完成**：§1 / §2 / §6.1 实写；结构精简（删 03/04 作独立 section）；refs 校验 6 篇；SYMBOL.md master sheet 建立
-- **下一里程碑**：(i) §5 Method 实写；(ii) Theorem 3 完整证明从 `Docs/proof/Theorem 3 revised.md` 迁入 LaTeX 附录；(iii) Burgers ground truth + EDM baseline 跑通
+- **本 session（W3）已完成**：§1/§2 精修；§5 Method 完整实写；§6 Theory proof sketch 全部实写；A1_proofs.tex 附录 5 大定理全部迁入；notation.tex 全部宏落地
+- **下一里程碑**：(i) 用户 review Thm 3 证明完整性；(ii) §7 Experiments 实写；(iii) §8 Conclusion 实写
 
 ### C.2 已完成（详见 REPORT.md §2）
 
@@ -92,34 +120,31 @@
 - 模板：NeurIPS 2026 官方模板
 - 工作区：paper/black + PROJECT/black 双骨架
 - 元数据：MISSION / CLAUDE / MEMORY 三件套；REPORT 体系
-- 用户独立产出：Theorem 3 草稿 v2 + critique + revised 版（在 `Docs/proof/`，待迁入 LaTeX 附录）
-- **W2 session #N+1（2026-04-26）**：
-  - SYMBOL.md 全文符号 master sheet 建立（含 11 个 `[planned]` 宏）
-  - `references.bib` 校验 6 篇核心 PDF 封面（DiffusionPDE / FunDPS / Score Shocks / Stochastic Interpolants / Bhola-Duraisamy FMO / Armegioiu chaotic）
-  - `01_intro.tex`、`02_related_work.tex` 完整实写
-  - `06_theory.tex` §6.1 Double-Burgers Coupling 实写桥段 + Thm 1 statement
-  - `paper/black/sections/{03,04}_*.tex` 删除（结构精简）
-  - `macros/notation.tex` 新增 `\physsol \initdat \uth` 三宏
+- 用户独立产出：Theorem 1/3/4/5 初稿 + Theorem 3 revised + critique（在 `Docs/proof/`）
+- **W2 session #N+1（2026-04-26）**：SYMBOL.md / references.bib 校验 / §1 §2 §6.1 实写 / 结构精简
+- **W2 session #N+2（2026-04-27）**：Theorem 2 严谨证明草稿（AI 产出）
+- **W3（2026-04-28）**：
+  - notation.tex 全部 11 个 `[planned]` 宏落地；SYMBOL.md 同步
+  - §1/§2 精修（强化 GAP 诊断、符号统一、macro 对齐）
+  - §5 Method 完整实写（4 子节 + Table + Algorithm 1）
+  - A1_proofs.tex 5 大定理完整 LaTeX 证明（5 子文件 + 主控）
+  - §6 Theory 5 段 proof sketch 全部实写
+  - REPORT.md / MEMORY.md 全面刷新
 
 ### C.3 进行中
 
-- 等待用户审批将 `paper/intro-relwork-restruct-20260426` 分支合并入 `main`
-- 用户在 main 上仍有 dirty 元数据（CLAUDE / MISSION 与 Docs/proof/* 系列），未纳入本分支
+- 用户 review Thm 3 LaTeX 证明（`proofs/thm3_proof.tex`）← **关键瓶颈**
 
 ### C.4 阻塞中
 
 - 暂无
 
-### C.5 下一步
+### C.5 下一步（W3/W4 优先级）
 
-W2 session #N+1 已完成 intro / related / 桥段实写。**W2 余下 / W3 优先级**：
-
-1. Theorem 3 完整证明从 `Docs/proof/Theorem 3 revised.md` 迁入 `paper/black/sections/A1_proofs.tex`（A 线主定理）
-2. `05_method.tex` 实写（BV-aware parameterization + loss family + sampler）
-3. Theorem 1 / 2 / 4 / 5 的 proof sketch 段落实写（替换 `\todo`）
-4. C/D 线：Burgers ground truth 数据生成 + EDM baseline 跑通（需要进入 PROJECT/black/）
-
-详见 `MISSION.md §本阶段任务` 的下一轮指令。
+1. **Thm 3 最终 review**：用户在 Overleaf 验证 `proofs/thm3_proof.tex` 的 6 阶段证明闭合性
+2. **§7 Experiments 实写**：E1-E3 实验描述 + baseline 方法 + 指标
+3. **§8 Conclusion 实写**：限制 + future work
+4. **全文 `\todo` 清除**：grep 剩余 `\todo`，逐项处理
 
 ---
 

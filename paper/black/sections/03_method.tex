@@ -1,0 +1,167 @@
+%==============================================================================
+% Section 3 · Methodology (~2 pages)
+%
+% 四个组件 + 损失家族（与 path_A_method_skeleton §3 完全对齐）：
+%   §3.1 Viscosity-matched noise schedule        → feeds Thm 1/4
+%   §3.2 BV-aware score parameterization (核心 novelty)  → feeds Thm 3
+%   §3.3 Loss family                              → feeds Thm 2/3
+%   §3.4 Reverse-time sampler with Godunov-form guidance  → feeds Thm 4/5
+%
+% 模板锚点：eq:visc-matched / eq:bv-aware / eq:loss-final / eq:reverse-ode
+%==============================================================================
+\section{Method: \emph{EntroDiff}}
+\label{sec:method}
+
+Theorem~\ref{thm:double-burgers} establishes that the score-level and solution-level Burgers structures are geometrically coupled---the physical shock set $\Shockphys(t)$ determines the interfacial layer $\Shockscore(\tau)$ of the score field. In this section we translate this structural coupling into four independent, trainable algorithmic components: (i) a viscosity-matched noise schedule that aligns the viscous profiles of the two Burgers systems (§\ref{sec:method:schedule}), (ii) a BV-aware score parameterization that hard-codes the exact $\tanh$ interfacial profile into the network architecture (§\ref{sec:method:bv-aware}), (iii) a composite loss family in which each term addresses a specific theoretical role (§\ref{sec:method:loss}), and (iv) a reverse-time sampler equipped with Godunov-form {PDE} guidance that remains well-defined across shocks (§\ref{sec:method:sampler}). The four components are not additive conveniences; their joint presence is necessary for Theorem~\ref{thm:improved-rate} to excise the $\exp(\amp T_{d})$ factor from the convergence bound.
+
+% ----- §3.1 Viscosity-matched schedule -----
+\subsection{Viscosity-matched noise schedule}
+\label{sec:method:schedule}
+
+The score-level Burgers equation~\eqref{eq:score-burgers} carries an effective viscosity $g(\tau)^{2}/2$, where $g(\tau) = \sqrt{\dot\sigma^{2}(\tau)}$ for a {VE-SDE}. The solution-level conservation law~\eqref{eq:scalar-law}, in its vanishing-viscosity (Kruzhkov) limit, is the $\physvis \to 0^{+}$ limit of the viscous regularisation $\dt \mathbf{u} + \dx \flux(\mathbf{u}) = \physvis\,\partial_{xx}\mathbf{u}$. Theorem~\ref{thm:double-burgers} achieves its tightest geometric correspondence when the two viscous scales coincide. We therefore replace the default {EDM} schedule (cosine or polynomial) with a viscosity-matched law:
+\begin{equation}
+\label{eq:visc-matched}
+\sigma^{2}(\tau) = 2\,\physvis\,\tau, \qquad \tau \in [0, T_{d}].
+\end{equation}
+Under~\eqref{eq:visc-matched}, the forward {SDE} becomes pure Brownian rescaling, $du = \sqrt{2\,\physvis}\,dw$, and the {Fokker--Planck} equation degenerates to $\dtau \ptau = \physvis\,\Lap_{u}\ptau$. The Cole--Hopf correspondence then yields the score-Burgers equation with viscosity precisely $\physvis$ (cf.\ the proof of Theorem~\ref{thm:double-burgers} in Appendix~\ref{appx:proofs}). This alignment has two consequences: (i) the interfacial layer $\Shockscore(\tau)$ of the score field develops with the same width scaling $\sim\!\sqrt{2\,\physvis\,\tau}$ as the viscous shock profile of the target {PDE}, and (ii) the speciation time at which score shocks nucleate coincides with the physical shock-formation time (Theorem~\ref{thm:shock-location}), enabling Rankine--Hugoniot admissibility to be inherited directly from the score-level dynamics.
+
+% ----- §3.2 BV-aware parameterization -----
+\subsection{BV-aware score parameterization}
+\label{sec:method:bv-aware}
+
+The central observation guiding our architecture is that the exact score field in the interfacial layer admits a closed-form $\tanh$ profile. \citet[Proposition~5.4]{sarkar2026scoreshocks} show that, for a bimodal target distribution separated by a hyperplane, the score field in the transition layer reduces to
+\begin{equation}
+  \score(u, \tau) \;\approx\; \frac{\Delta s_{\mathrm{jump}}}{2}\,
+    \tanh\!\left( \frac{d_{\Sigma}(u)}{2\,\sigma^{2}(\tau)} \right)
+    \,\nabla_{u} d_{\Sigma}(u),
+\end{equation}
+where $d_{\Sigma}$ is the signed distance to the separating manifold and $\Delta s_{\mathrm{jump}}$ is the local jump vector. A standard {EDM} denoiser must learn this functional form from data; the approximation error in the interfacial region is the source of the $\exp(\amp T_{d})$ blow-up factor identified by \citet[Theorem~6.3]{sarkar2026scoreshocks}.
+
+We eliminate this source by \emph{embedding the $\tanh$ profile directly into the network architecture}. The score network is decomposed into three sub-networks,
+\begin{equation}
+\label{eq:bv-aware}
+\sth(u, \tau) \;=\;
+  \nabla \phisbg(u, \tau)
+  \;+\;
+  \frac{\jumpamp(u, \tau)}{2}
+  \;\tanh\!\left(
+    \frac{\phissh(u, \tau)}{2\,\sigtau^{2}}
+  \right)
+  \;\nabla \phissh(u, \tau),
+\end{equation}
+with the following roles:
+\begin{itemize}\setlength{\itemsep}{1pt}
+  \item $\phisbg(u, \tau)$: a smooth background potential, implemented as a small {MLP} or {U-Net} backbone (structurally equivalent to the baseline {EDM} denoiser); its gradient $\nabla \phisbg$ captures the score field in regions far from any shock.
+  \item $\phissh(u, \tau)$: a signed-distance-to-shock function, zero on the interfacial manifold $\Shockscore(\tau)$ and satisfying $\abs{\nabla \phissh} = 1$ on the manifold; this encodes the shock geometry.
+  \item $\jumpamp(u, \tau)$: the local jump amplitude, constrained to satisfy $\jumpamp \ge \kappa_{0} > 0$ via a Softplus gate; the Rankine--Hugoniot condition of Theorem~\ref{thm:shock-location} provides the physical value $\jumpamp = \flux(u_{L}) - \flux(u_{R})$.
+\end{itemize}
+In the limit $\tau \to 0$, the $\tanh$ factor degenerates to a step function, and~\eqref{eq:bv-aware} exactly reproduces the limiting score discontinuity across the shock---without requiring the network to approximate this singular behaviour. This is the architectural lever that degrades the Gronwall constant in Theorem~\ref{thm:improved-rate} from $\amp$ to $\mathcal{O}(1)$.
+
+% ----- §3.3 Loss family -----
+\subsection{Loss family}
+\label{sec:method:loss}
+
+The training objective is a composite loss in which each term targets a distinct theoretical requirement of the convergence proof:
+\begin{equation}
+\label{eq:loss-final}
+\mathcal{L} \;=\;
+  \Ldsm
+  \;+\;
+  \lambda_{\mathrm{ent}}\,\Rent(\Dth)
+  \;+\;
+  \lambda_{\mathrm{BV}}\,\TV(\Dth)
+  \;+\;
+  \lambda_{\mathrm{Burg}}\,
+    \bigl\| \dtau \sth + 2\,\sth\cdot\nabla_{u}\sth - \Lap_{u}\sth \bigr\|^{2}.
+\end{equation}
+The four terms, together with their theoretical and empirical roles, are summarised in Table~\ref{tab:loss-family}.
+
+\begin{table}[t]
+    \caption{Loss family of \emph{EntroDiff}. Each regularizer targets a specific hypothesis in the convergence proof of Theorem~\ref{thm:improved-rate}. \textbf{Key take-away}: removing any single term breaks the proof at a distinct step---$\Lent$ at entropy admissibility, $\Lbv$ at the Helly compactness argument, $\Lburg$ at the Gronwall estimate.}
+    \label{tab:loss-family}
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        Loss & Form & Theoretical role \\
+        \midrule
+        $\Ldsm$
+            & Denoising score matching
+            & Baseline regression target; provides the $\varepsilon^{2}$ score-error budget \\
+        $\lambda_{\mathrm{ent}}\,\Rent$
+            & Kruzhkov entropy indicator
+            & Selects the physically admissible weak solution from the non-unique family of \eqref{eq:scalar-law} \\
+        $\lambda_{\mathrm{BV}}\,\TV(\Dth)$
+            & Total-variation penalty on the denoiser
+            & Guarantees $\hat u \in \BV(\Omega)$, enabling the $L^{1}$-compactness step in Theorem~\ref{thm:improved-rate} \\
+        $\lambda_{\mathrm{Burg}}\,\norm{\partial_{\tau}\sth + 2\sth\nabla_{u}\sth - \Lap_{u}\sth}^{2}$
+            & Score--Burgers consistency residual
+            & Confines $\sth$ to the score-Burgers manifold~\eqref{eq:score-burgers}, sharpening the Gronwall estimate of Theorem~\ref{thm:improved-rate} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The Kruzhkov entropy regulariser $\Rent$ is defined as the expected violation of the entropy inequality over all constant test levels $k \in \R$:
+\begin{equation}
+\label{eq:rent-def}
+\Rent(\Dth) \;=\;
+  \E_{k}\,\bigl[
+    \max\!\bigl\{0,\;
+      \dt \abs{\Dth - k}
+      + \dx\bigl(\operatorname{sgn}(\Dth - k)\,(\flux(\Dth) - \flux(k))\bigr)
+    \bigr\}
+  \bigr].
+\end{equation}
+The $\TV$ term is the standard total-variation seminorm evaluated on the denoiser output; together with the BV-aware parameterization~\eqref{eq:bv-aware}, it places the generated samples in a uniformly $\BV$-bounded set $\mathcal{K}_{M} = \{\mathbf{u}: \TV(\mathbf{u}) \le M\}$ (Assumption~A0 of Theorem~\ref{thm:improved-rate}). The Burgers-consistency term penalises deviations of the learned score from the parabolic manifold~\eqref{eq:score-burgers}; when combined with the viscosity-matched schedule~\eqref{eq:visc-matched}, this regulariser aligns the score-level dynamics with the viscous approximation of the target {PDE}.
+
+% ----- §3.4 Sampler -----
+\subsection{Reverse-time sampler with Godunov-form guidance}
+\label{sec:method:sampler}
+
+At inference, we evolve the sample from the noise prior $u_{T_{d}} \sim \mathcal{N}(0, \sigma^{2}(T_{d})\,I)$ to the data end $\tau = 0$ via a probability-flow {ODE} with guidance. The key structural difference from {DiffusionPDE} \citep{huang2024diffusionpde} and {FunDPS} \citep{yao2025fundps} is the treatment of the {PDE} residual term: where prior work evaluates $\partial_{t}u + \partial_{x}\flux(u)$ via central differences---a discretisation that is ill-defined at discontinuity interfaces---we employ a Godunov-form flux that is \emph{entropy-consistent} and respects the Rankine--Hugoniot condition across shocks:
+\begin{equation}
+\label{eq:reverse-ode}
+\frac{du}{d\tau} \;=\;
+  -\sigtau\,\dot\sigma(\tau)\,\sth(u, \tau)
+  \;-\;
+  \zeta_{\mathrm{obs}}\,\nabla_{u}\,\mathcal{L}_{\mathrm{obs}}(u)
+  \;-\;
+  \zeta_{\mathrm{PDE}}\,\nabla_{u}\,\Lpde^{\mathrm{Godunov}}(u).
+\end{equation}
+The Godunov residual $\Lpde^{\mathrm{Godunov}}$ is constructed from the weak form of the conservation law~\eqref{eq:scalar-law}: on each spatial cell $[x_{i-1/2},\,x_{i+1/2}]$,
+\begin{equation}
+\label{eq:godunov}
+\mathcal{L}_{i}^{\mathrm{Godunov}}(u) \;=\;
+  \frac{\Delta t}{\Delta x}\,
+  \bigl[
+    \flux^{\mathrm{God}}(u_{i}, u_{i+1}) - \flux^{\mathrm{God}}(u_{i-1}, u_{i})
+  \bigr],
+\end{equation}
+where $\flux^{\mathrm{God}}(u_{L}, u_{R})$ is the Godunov numerical flux---the exact Riemann-solution flux evaluated at the cell interface. This flux is monotone, entropy-satisfying, and well-defined at arbitrary jumps; it seamlessly handles the transition between smooth and shocked regions without oscillation. The guidance coefficients $\zeta_{\mathrm{obs}}$ and $\zeta_{\mathrm{PDE}}$ control the strength of the observation and {PDE} constraints, respectively.
+
+The numerical integration of~\eqref{eq:reverse-ode} uses the Heun second-order method with $N_{\tau}$ time steps (default $N_{\tau} = 50$; full hyperparameters in Appendix~\ref{appx:impl}). Algorithm~\ref{alg:entrodiff-sample} summarises the complete sampling procedure.
+
+\begin{algorithm}[t]
+    \caption{\emph{EntroDiff} reverse-time sampling. \textbf{Key take-away}: the Godunov flux~\eqref{eq:godunov} replaces central differences everywhere a {PDE} residual is evaluated, making the guidance term well-defined across shock interfaces.}
+    \label{alg:entrodiff-sample}
+    \begin{algorithmic}[1]
+        \renewcommand{\algorithmicrequire}{\textbf{Input:}}
+        \renewcommand{\algorithmicensure}{\textbf{Output:}}
+        \Require Noise schedule $\sigma(\tau)$, score network $\sth$, {PDE} flux $\flux$, guidance weights $\zeta_{\mathrm{obs}}, \zeta_{\mathrm{PDE}}$, steps $N_{\tau}$
+        \Ensure Generated sample $\uth$
+        \State $\tau \gets T_{d}$, \quad $u \gets u_{T_{d}} \sim \mathcal{N}(0, \sigma^{2}(T_{d})\,I)$
+        \State $\Delta\tau \gets T_{d} / N_{\tau}$
+        \For{$n = 1$ \textbf{to} $N_{\tau}$}
+            \State $s \gets \sth(u, \tau)$ \Comment{BV-aware score evaluation~\eqref{eq:bv-aware}}
+            \State $g_{\mathrm{obs}} \gets \zeta_{\mathrm{obs}}\,\nabla_{u}\mathcal{L}_{\mathrm{obs}}(u)$ \Comment{Observation guidance (if applicable)}
+            \State $g_{\mathrm{PDE}} \gets \zeta_{\mathrm{PDE}}\,\nabla_{u}\Lpde^{\mathrm{Godunov}}(u)$ \Comment{Godunov-form {PDE} guidance~\eqref{eq:godunov}}
+            \State $v \gets -\,\sigtau\,\dot\sigma(\tau)\,s \;-\; g_{\mathrm{obs}} \;-\; g_{\mathrm{PDE}}$
+            \State $\tilde u \gets u + \Delta\tau \cdot v$ \Comment{Heun predictor}
+            \State $\tilde v \gets -\,\sigma(\tau - \Delta\tau)\,\dot\sigma(\tau - \Delta\tau)\,\sth(\tilde u, \tau - \Delta\tau) \;-\; \ldots$
+            \State $u \gets u + \frac{\Delta\tau}{2}\,(v + \tilde v)$ \Comment{Heun corrector}
+            \State $\tau \gets \tau - \Delta\tau$
+        \EndFor
+        \State \Return $\uth \gets u$
+    \end{algorithmic}
+\end{algorithm}
+
+Theorem~\ref{thm:shock-location} proves that, in the $\tau \to 0$ limit, samples produced by Algorithm~\ref{alg:entrodiff-sample} satisfy the Rankine--Hugoniot condition and the Lax entropy condition at every shock location. Theorem~\ref{thm:jko} recasts the entire reverse-time procedure as a {JKO} gradient flow, establishing a rigorous variational interpretation of the sampling process.

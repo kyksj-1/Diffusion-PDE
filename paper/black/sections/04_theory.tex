@@ -1,0 +1,123 @@
+%==============================================================================
+% Section 4 · Theory Analysis (~2 pages) ⭐ 论文理论核心
+%
+% NeurIPS 2026 W3 精修：proof sketch 全部实写，完整证明在 Appendix A1。
+%
+% 5 个 Theorem，按 path_A_method_skeleton §4：
+%   §4.1 Double-Burgers coupling (Theorem 1)        ⭐ 桥段
+%   §4.2 Entropy-solution stability (Theorem 2, baseline rate)
+%   §4.3 Improved rate via BV-aware (Theorem 3)     ⭐ 论文主定理
+%   §4.4 Shock-location admissibility (Theorem 4)
+%   §4.5 JKO correspondence (Theorem 5)
+%
+% 每个 Theorem 在正文给 1 段思想（statement + 一句证明思想）；完整证明在
+% Appendix~\ref{appx:proofs}。
+%==============================================================================
+\section{Theory}
+\label{sec:theory}
+
+The theorems of this section sequentially erect the convergence theory of \emph{EntroDiff}. §\ref{sec:theory:dburg} establishes the structural foundation by coupling the score-level and solution-level Burgers structures (Theorem~\ref{thm:double-burgers}); §\ref{sec:theory:stability} gives a baseline stability bound that exposes the $\exp(\amp T_{d})$ amplification factor of standard parameterizations; §\ref{sec:theory:improved-rate} states the main contribution---an improved $\Wass{1} \le \mathcal{O}(\varepsilon^{1/2})$ rate that excises this exponent (Theorem~\ref{thm:improved-rate}); §\ref{sec:theory:shock-location} certifies shock-location admissibility via Rankine--Hugoniot and Lax conditions; and §\ref{sec:theory:jko} closes the loop by recasting the reverse process as a {JKO} gradient flow.
+
+% ============================================================================
+% §4.1 · Theorem 1 · Double-Burgers coupling
+% ============================================================================
+\subsection{Double-Burgers coupling}
+\label{sec:theory:dburg}
+
+The point of departure is a structural identity established in \citet{sarkar2026scoreshocks}: along the diffusion-time axis $\tau$, the score field of any {VE-SDE} diffusion model satisfies a viscous Burgers equation,
+\begin{equation}
+  \label{eq:score-burgers}
+  \dtau \score(u, \tau) + 2\,\score(u, \tau) \cdot \nabla_u \score(u, \tau) = \Lap_u \score(u, \tau).
+\end{equation}
+Equivalently, $u \mapsto -2\,\score$ is a Burgers velocity field in $(u, \tau)$. When the target distribution $\rhotrue$ is itself supported on solutions of a hyperbolic conservation law of the form~\eqref{eq:scalar-law}, a second Burgers structure emerges in the orthogonal direction: the data law at physical time $t$, $\rhotphys \coloneqq (\Phi^{\flux}_{t})_{\#} \rho_{0}$ with $\Phi^{\flux}_{t}$ the entropy semigroup of $\flux$, develops shocks at locations $\Shockphys(t) \subset \Omega$ in finite time. The two structures are not merely parallel; they are \emph{coupled}, in that physical shocks define the singular support of $\rhotphys$ and thereby fix the location of the interfacial layer $\Shockscore(\tau)$ at which~\eqref{eq:score-burgers} develops a $\tanh$-shaped jump.
+
+\begin{theorem}[Double-Burgers coupling]
+\label{thm:double-burgers}
+Let $\rhotphys$ denote the law of the Kruzhkov entropy solution of~\eqref{eq:scalar-law} at physical time $t \in [0, T_{\mathrm{phys}}]$, and write $p_{\tau, t} \coloneqq \rhotphys \ast \Gtau$ for the corresponding noised density at diffusion time $\tau$. Setting $s_{\tau, t} \coloneqq \nabla_u \log p_{\tau, t}$, the joint density $p_{\tau, t}$ satisfies the coupled system
+\begin{align}
+  \label{eq:dburg-system}
+  \dtau s_{\tau, t} &= \Lap_u s_{\tau, t} + 2\,s_{\tau, t} \cdot \nabla_u s_{\tau, t}, \\
+  \dt \rhotphys + \dx\!\bigl(\flux(\mathbf{u})\,\rhotphys\bigr) &= 0 \qquad \text{(in the entropy-distribution sense)}. \notag
+\end{align}
+Moreover, for $\tau$ sufficiently small, the interfacial layer $\Shockscore(\tau)$ of $s_{\tau, t}$ is supported in an $\mathcal{O}(\sigtau)$ neighbourhood of the lift of the physical shock set $\Shockphys(t)$ to state space.
+\end{theorem}
+
+\textit{Proof sketch.} The $\tau$-direction equation follows from the Cole--Hopf transformation applied to the heat equation $\dtau p_{\tau, t} = \Lap_{u} p_{\tau, t}$ (a restatement of Score Shocks \citep[Theorem~4.3]{sarkar2026scoreshocks} applied pointwise in $t$). The $t$-direction equation is the Liouville continuity equation along the characteristic flow of $\flux$, lifted to the entropy-solution sense via $L^{1}$-contractivity \citep{kruzhkov1970}. The geometric correspondence $\Shockphys(t) \leftrightarrow \Shockscore(\tau)$ is obtained from the singular support of $\rhotphys$ at physical shocks combined with Laplace's method on the convolution $\rhotphys \ast \Gtau$, yielding the $\mathcal{O}(\sigtau)$ neighbourhood bound. Full proof in Appendix~\ref{appx:proofs:thm1}.
+
+% ============================================================================
+% §4.2 · Theorem 2 · Entropy-solution stability (baseline rate)
+% ============================================================================
+\subsection{Entropy-solution stability (baseline rate)}
+\label{sec:theory:stability}
+
+\begin{theorem}[Entropy-solution stability]
+\label{thm:stability}
+Let the score training error satisfy $\E_{\tau}\norm{\sth - \score_{\tau}}^{2} \le \varepsilon^{2}$. Let $\uhat(0)$ be the sample produced by the reverse sampler under the standard (non-BV-aware) parameterization, and $\physsol$ the Kruzhkov entropy solution of~\eqref{eq:scalar-law} at $t = T_{\mathrm{phys}}$. Then
+\begin{equation}
+\label{eq:thm-stability}
+\Wass{1}\bigl(\Law(\uhat(0)), \Law(\physsol)\bigr) \le C_{1}\,\varepsilon\,\exp(\amp T_{d}),
+\end{equation}
+where $\amp = \sup_{\tau} \snr(\tau)/2$ is the Score Shocks amplification exponent \citep[Theorem~6.3]{sarkar2026scoreshocks}, and $C_{1}$ depends on the schedule bound $C_{\sigma}$ and a distributional stability constant $C_{\mathrm{stab}}$.
+\end{theorem}
+
+\textit{Proof sketch.} The proof proceeds by coupling the true reverse trajectory $\unat$ and the learned trajectory $\uhat$ through the {ODE} flow, then applying Gronwall's inequality in reverse time. The Gronwall constant is $\amp = \sup_{\tau} |\sigma(\tau)\,\dot\sigma(\tau)|\,L_{s}(\tau)$, where $L_{s}(\tau)$ is the Lipschitz constant of the true score Jacobian. Under standard parameterizations, $L_{s}(\tau)$ grows as $1/\sigma^{2}(\tau)$ near the data end ($\tau \to 0$), leading to the $\exp(\amp T_{d})$ blow-up. A measure-discrepancy correction via the Kantorovich--Rubinstein duality relates the empirical expectation over $\uhat$ to the true expectation over $\unat$. The final $W_{1}$ bound then follows from $L^{1}$-contractivity of the Kruzhkov entropy semigroup \citep{kruzhkov1970}, which ensures that numerical discretisation errors in the {PDE} solution do not propagate. Full proof in Appendix~\ref{appx:proofs:thm2}.
+
+% ============================================================================
+% §4.3 · Theorem 3 · Improved rate (main result)                        ⭐
+% ============================================================================
+\subsection{Improved rate via BV-aware parameterization}
+\label{sec:theory:improved-rate}
+
+\begin{theorem}[Improved rate via BV-aware parameterization]
+\label{thm:improved-rate}
+Under the BV-aware parameterization~\eqref{eq:bv-aware} and the composite loss~\eqref{eq:loss-final} with $\lambda_{\mathrm{BV}} > 0$, and under the regularity assumptions A0--A6 (stated in full in Appendix~\ref{appx:proofs:thm3}), we have
+\begin{equation}
+\label{eq:thm-improved}
+\Wass{1}\bigl(\Law(\uth), \Law(\physsol)\bigr) \le C_{2}\,\varepsilon^{1/2},
+\end{equation}
+removing the $\exp(\amp T_{d})$ blow-up factor of Theorem~\ref{thm:stability}. The constant $C_{2}$ depends on the {BV} ball radius $M$, the viscosity $\physvis$, and the schedule length $T_{d}$, but is independent of $\amp$ and $\varepsilon$.
+\end{theorem}
+
+\textit{Proof sketch.} The proof proceeds in six stages. \textbf{Stage 1} establishes refined trajectory bounds: because the BV-aware parameterization~\eqref{eq:bv-aware} inherits the exact $\tanh$ interfacial profile from \citet[Proposition~5.4]{sarkar2026scoreshocks}, the score Jacobian's Lipschitz constant degenerates from $L_{s}(\tau) \sim 1/\tau^{2}$ to $\mathcal{O}(\tau^{-1/2})$, reducing the Gronwall exponent from $\amp$ to $\mathcal{O}(1)$. \textbf{Stage 2} closes the Gronwall loop with this reduced constant, yielding an $\mathcal{O}(\varepsilon)$ trajectory-error bound independent of $\amp$. \textbf{Stage 3} maps the state-space error to the physical domain through the Kruzhkov $L^{1}$-contraction semigroup. \textbf{Stage 4} bridges the $L^{1}$ and $W_{1}$ metrics: the {BV} penalty $\lambda_{\mathrm{BV}}\TV(\Dth)$ and the hard-coded $\tanh$ structure jointly guarantee that $\uth$ belongs to the uniformly bounded-{TV} ball $\mathcal{K}_{M}$, on which $L^{1}$ and $W_{1}$ are equivalent via the Kantorovich--Rubinstein dual. \textbf{Stage 5} controls the viscosity error between $\physsolvis$ and $\physsol$ using the Kuznetsov rate $\mathcal{O}(\physvis^{1/2})$ \citep{kuznetsov1976}, and \textbf{Stage 6} assembles all components via the triangle inequality to deliver the $\varepsilon^{1/2}$ rate. Full proof in Appendix~\ref{appx:proofs:thm3}.
+
+\begin{remark}
+\label{rem:tightness}
+The rate $\varepsilon^{1/2}$ is consistent with the optimal rate for entropy-solution approximation by vanishing-viscosity methods \citep{kuznetsov1976}. Whether the full $\varepsilon^{1}$ rate is achievable under the present structural assumptions remains an open question; the bottleneck is the $\varepsilon^{1/2}$ conversion from $L^{2}$ score error to $W_{1}$ distributional distance via Kantorovich--Rubinstein duality, which is tight in the absence of further log-Sobolev or Talagrand-type inequalities on the target distribution.
+\end{remark}
+
+% ============================================================================
+% §4.4 · Theorem 4 · Shock-location admissibility
+% ============================================================================
+\subsection{Shock-location admissibility}
+\label{sec:theory:shock-location}
+
+\begin{theorem}[Shock-location admissibility]
+\label{thm:shock-location}
+In the limit $\sigtau \to 0$, the shock $x_{s}(t)$ of $\uth$ satisfies the Rankine--Hugoniot condition
+\begin{equation}
+\label{eq:rh}
+\dot x_{s}(t) = \frac{\flux(u_{L}) - \flux(u_{R})}{u_{L} - u_{R}},
+\end{equation}
+and the Lax entropy condition $\flux'(u_{L}) \ge \dot x_{s} \ge \flux'(u_{R})$ holds almost everywhere.
+\end{theorem}
+
+\textit{Proof sketch.} The viscosity-matched schedule~\eqref{eq:visc-matched} aligns the effective viscosity of the score-level Burgers equation with the physical viscosity $\physvis$, establishing an exact interfacial width scaling $\sqrt{2\physvis\tau}$ (Lemma~1, Appendix~\ref{appx:proofs:thm4}). Under the BV-aware parameterization~\eqref{eq:bv-aware}, the $\tanh$ profile degenerates to a Heaviside step in the $\tau \to 0$ limit; the Godunov-form guidance~\eqref{eq:godunov} then enforces the weak-form jump condition across every cell interface via a Green's theorem argument on the sample trajectory (Lemma~3). The Rankine--Hugoniot relation---an algebraic consequence of the weak formulation of~\eqref{eq:scalar-law}---is thereby inherited directly from the score-level jump correspondence \citep[Theorem~5.5]{sarkar2026scoreshocks}. The Lax entropy condition follows from Kruzhkov's inequality applied to the Godunov flux, which is monotone and hence entropy-satisfying. Full proof in Appendix~\ref{appx:proofs:thm4}.
+
+% ============================================================================
+% §4.5 · Theorem 5 · JKO correspondence
+% ============================================================================
+\subsection{{JKO} correspondence}
+\label{sec:theory:jko}
+
+\begin{theorem}[{JKO} correspondence]
+\label{thm:jko}
+Under the viscosity-matched schedule~\eqref{eq:visc-matched} and the Burgers-consistency loss $\Lburg$, the reverse-time {ODE}~\eqref{eq:reverse-ode} in the time-discretization limit $\Delta\tau \to 0$ corresponds to the {JKO} step
+\begin{equation}
+\label{eq:jko}
+\rho^{n+1} = \arg\min_{\rho \in \mathcal{P}_{2}}
+            \left\{ \mathcal{F}(\rho) + \frac{1}{2\Delta\tau}\,\Wass{2}^{2}(\rho, \rho^{n}) \right\},
+\end{equation}
+where $\mathcal{F}(\rho) = \Ent(\rho \mid \rhotrue) + \lambda\,\mathcal{R}(\rho)$ is the free-energy functional composed of the relative entropy and a {PDE}-constraint functional $\mathcal{R}$.
+\end{theorem}
+
+\textit{Proof sketch.} The reverse {ODE} induces a continuity equation $\dtau \ptau + \nabla\cdot(\ptau v) = 0$ on the particle density, with the total velocity field $v$ decomposed into a Fokker--Planck component (from the standard score term) and a guidance component (from $\Lent$ and $\Lburg$). The first variation of the free energy $\mathcal{F}$ identifies the gradient-flow velocity as $-\nabla(\delta\mathcal{F}/\delta\rho)$, and the Burgers-consistency penalty $\Lburg$ ensures that the learned score satisfies the entropy-dissipation relation required for the Wasserstein gradient-flow structure \citep{jko1998}. Under the time reparameterization $\theta(\tau) = \int_{0}^{\tau} a(r)\,dr$ with $a(\tau) = \dot\sigma^{2}(\tau)/2$, the density evolution becomes the $W_{2}$-gradient flow of $\mathcal{F}$, and the implicit Euler discretisation recovers the JKO variational formulation \eqref{eq:jko}. Full proof in Appendix~\ref{appx:proofs:thm5}.
