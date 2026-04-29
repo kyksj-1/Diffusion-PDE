@@ -1,0 +1,12 @@
+%==============================================================================
+% Section 6 · Conclusion & Limitations (~0.3 page)
+%
+% NeurIPS convention: short conclusion + honest limitations + one-sentence future
+% Space budget: ~25 lines total (0.25–0.35 page)
+%==============================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+We have shown that the score--Burgers identity, until now a theoretical observation, can be leveraged as an algorithmic principle for solving hyperbolic {PDE}s with generative diffusion. The double-Burgers coupling (Theorem~\ref{thm:double-burgers}) implies that physical shock geometry determines the score-level interfacial layer; by hard-coding the exact $\tanh$ profile of the score field into the network architecture, we eliminate the $\exp(\amp T_{d})$ error-amplification factor of standard denoising and obtain a $\Wass{1}\le\mathcal{O}(\varepsilon^{1/2})$ convergence rate to the Kruzhkov entropy solution (Theorem~\ref{thm:improved-rate}). Toy experiments on the inviscid Burgers equation confirm that the architectural prior enables effective sampling with substantially fewer integration steps than the baseline, and that each component of the method contributes measurably to the final performance.
+
+The current theory is stated for 1D scalar conservation laws; extensions to systems (Euler) and multiple spatial dimensions remain open. The BV-aware parameterization relies on the {VE-SDE} setting, where the Cole--Hopf correspondence yields a clean Burgers identity; the {VP} analogue is algebraically messier and left for future work. The constructed $\phissh$ network produces a signed-distance-to-shock surrogate; for 2D problems a mesh-free, learned level-set representation is an interesting engineering challenge. Beyond hyperbolic {PDE}s, the entropy-aware machinery connects naturally to kinetic equations {Vlasov--Poisson} and to recent flow-matching formulations in function space, where the Burgers structure persists and the same architectural prior may apply.

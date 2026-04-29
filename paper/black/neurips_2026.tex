@@ -1,0 +1,116 @@
+%==============================================================================
+% NeurIPS 2026 主控文件 — EntroDiff
+%
+% 提交规范严格遵守 paper/black/CONVENTIONS.md 与项目 CLAUDE.md：
+%   - 9 页正文上限（含图表）
+%   - 双盲：禁加 [final] / [preprint]
+%   - 公式必须用 equation / align 环境，禁用 $$
+%   - 表格用 booktabs，禁用垂直分割线
+%   - 图表 caption 必须含 "Key take-away message"
+%   - 引用 natbib，文内统一 \citet / \citep
+%
+% 编译：pdflatex → bibtex → pdflatex → pdflatex
+%==============================================================================
+\documentclass{article}
+
+% natbib 选项必须在加载 neurips_2026 之前传入
+\PassOptionsToPackage{numbers, compress}{natbib}
+
+% 双盲提交：使用 default（= main + 双盲 + 行号）。严禁加 [final] 或 [preprint]
+\usepackage{neurips_2026}
+
+%------------------------------------------------------------------------------
+% 通用宏包（与官方模板对齐）
+%------------------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}    % 高质量表格（禁用 vertical rules）
+\usepackage{tabularx}    % 自适应宽度表格（X 列自动换行）
+\usepackage[inline]{enumitem}    % 自定义列表环境（enumerate* inline / label 定制）
+\usepackage{amsfonts}
+\usepackage{amsmath}     % equation / align / 等环境
+\usepackage{amssymb}
+\usepackage{amsthm}      % 定理 / 命题 / 引理环境
+\usepackage{mathtools}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+
+% 算法伪代码与证明符号
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{stmaryrd}       % \llbracket, \rrbracket 等
+
+%------------------------------------------------------------------------------
+% 项目自定义宏（专业符号统一）
+%------------------------------------------------------------------------------
+\input{macros/notation.tex}
+
+%------------------------------------------------------------------------------
+% 定理 / 命题环境
+%------------------------------------------------------------------------------
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+%------------------------------------------------------------------------------
+% 标题与作者（双盲提交占位）
+%------------------------------------------------------------------------------
+\title{EntroDiff: Taming Hyperbolic Shocks via Double-Burgers Coupling}
+
+% 双盲：占位作者；camera-ready 时再换上真实作者块
+\author{%
+  Anonymous Authors\\
+  Anonymous Affiliation\\
+  \texttt{anonymous@anonymous}\\
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Generative diffusion in function space has achieved striking accuracy on smooth {PDE} benchmarks, yet hyperbolic conservation laws remain untouched---the empirical, analytical, and algorithmic blind spot of the paradigm. Central-difference evaluation of {PDE}-residual guidance terms, the workhorse of the current state of the art, becomes singular at the discontinuity interfaces that define the hyperbolic regime.
+We resolve this impasse by observing that the score field of a {VE-SDE} diffusion model itself satisfies a viscous Burgers equation---a recent identity that, when the target {PDE} is also of Burgers type, creates two coupled Burgers structures in orthogonal directions. Physical shocks determine the singular support of the data distribution and thereby pin the score-level interfacial layer, forming a geometric correspondence that we formalise as a double-Burgers coupling theorem.
+Converting this structural observation into an algorithm, we embed the exact $\tanh$ interfacial profile of the score field directly into the network architecture, decomposing the learned score into a smooth background potential, a signed-distance-to-shock function, and a Rankine--Hugoniot--admissible jump amplitude. This hard-coded architectural prior eliminates the $\exp(\Lambda T_{d})$ error-amplification factor that plagues standard denoisers near shocks, degrading the Gronwall constant in the convergence analysis from $\Lambda$ to $\mathcal{O}(1)$.
+The resulting sampler, \emph{EntroDiff}, carries a composite loss family in which each regulariser targets a distinct hypothesis in the convergence proof, and a Godunov-form {PDE} guidance term---entropy-consistent and well-defined across arbitrary jumps---replaces the singular central-difference residual of prior work. Under the BV-aware parameterization and a total-variation penalty that enforces $L^{1}$-compactness, we prove that generated samples converge to the Kruzhkov entropy solution at rate $\Wass{1}\le\mathcal{O}(\varepsilon^{1/2})$ in the score-matching error budget $\varepsilon^{2}$, with constants independent of the amplification exponent. Toy experiments on the inviscid Burgers equation validate the mechanism: the architectural prior enables effective sampling with substantially fewer integration steps than the baseline, and each ablation removes a measurable piece of the empirical margin.
+\end{abstract}
+
+%------------------------------------------------------------------------------
+\input{sections/01_intro.tex}
+\input{sections/02_related_work.tex}
+\input{sections/03_method.tex}
+\input{sections/04_theory.tex}
+\input{sections/05_experiments.tex}
+\input{sections/06_conclusion.tex}
+%------------------------------------------------------------------------------
+
+\begin{ack}
+% 双盲提交时此段被自动隐藏
+\end{ack}
+
+%------------------------------------------------------------------------------
+% References
+%------------------------------------------------------------------------------
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+%==============================================================================
+\appendix
+\input{sections/A1_proofs.tex}
+\input{sections/A2_extra_experiments.tex}
+\input{sections/A3_implementation_details.tex}
+%==============================================================================
+
+\newpage
+\input{checklist.tex}
+
+\end{document}

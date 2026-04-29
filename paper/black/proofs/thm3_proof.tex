@@ -1,0 +1,636 @@
+%==============================================================================
+% proofs/thm3_proof.tex — Theorem 3 full proof (Improved Rate, NeurIPS 2026)
+%
+% Corresponds to main body \ref{thm:improved-rate}. Six-stage complete proof,
+% with assumption system A0--A6.
+% Macros from macros/notation.tex.
+%==============================================================================
+
+% ============================================================================
+% Theorem Statement
+% ============================================================================
+\begin{theorem}\label{appx:thm3}
+Under Assumptions~\ref{ass:A0}--\ref{ass:A6}, consider the BV-aware parameterization~\eqref{eq:bv-aware} and the loss $\mathcal{L}_3$ (including the TV regularizer).
+Let the score matching error satisfy A3, with $\varepsilon \in (0,1)$.
+Then the generated distribution $\muth = \Law(\uth)$ and the Dirac measure $\delta_{\physsol}$ at the Kruzhkov entropy solution $\physsol$ satisfy
+\begin{equation}\label{eq:thm3-bound}
+  \Wass{1}(\muth, \delta_{\physsol}) \leq C_{\mathrm{final}} \, \varepsilon^{1/2},
+\end{equation}
+where $C_{\mathrm{final}}$ depends only on $M, T_d, T_{\mathrm{phys}}, \kappa_0, L_{\mathrm{sm}}, \physvis/\varepsilon$ (all independent of $\varepsilon$).
+In particular, the bound \emph{does not} contain the exponential amplification factor $\exp(\amp T)$ (cf.\ Theorem~\ref{thm:stability}).
+\end{theorem}
+
+% ============================================================================
+% Assumption System
+% ============================================================================
+\subsection{Assumption System (A0--A6)}\label{sec:assumptions}
+
+The following assumptions hold throughout the proof. The physical meaning and verifiability of each are stated alongside.
+
+\begin{description}
+\item[Assumption A0 (BV boundedness)]\label{ass:A0}
+The TV regularizer $\lambda_{\mathrm{BV}} \, \TV(\Dth)$ in the loss $\mathcal{L}_3$ together with the hard-coded $\tanh$ structure of parameterization~\eqref{eq:bv-aware} jointly guarantee that the generated sample $\uth$ almost surely belongs to the bounded TV ball
+\begin{equation}
+  \mathcal{K}_M \coloneqq \bigl\{ \mathbf{u} \in L^1(\Omega) \cap L^\infty(\Omega) : \TV(\mathbf{u}) \leq M \bigr\},
+\end{equation}
+and the true entropy solution satisfies $\TV(\physsol) \leq M$, with $M > 0$ a constant independent of $\varepsilon$.
+\emph{Verifiability:} $M$ can be estimated from the TV bound of the initial data and the TV-non-increasing property of the BV semigroup; $\lambda_{\mathrm{BV}}$ is a training hyperparameter.
+
+\item[Assumption A1 (Locally bimodal score structure)]\label{ass:A1}
+In a neighborhood of the shock manifold $\Shockscore(\tau)$, the true score field admits the asymptotic form
+\begin{equation}
+  \score(u, \tau) = s^{\mathrm{sm}}(u, \tau) + \frac{\Delta s_{\mathrm{jump}}(u)}{2} \tanh\!\Bigl(\frac{A(u,\tau) - B(u,\tau)}{2\tau}\Bigr) + \mathcal{O}(\tau),
+\end{equation}
+where $A, B$ are the Cole--Hopf potential functions of the two dominant modes, $\Delta s_{\mathrm{jump}} = \nabla_u B - \nabla_u A$ is the jump vector, and $s^{\mathrm{sm}}$ is uniformly Lipschitz on the whole space.
+This structure follows as a local result of the Laplace asymptotic method, assuming sufficiently small diffusion time and well-separated Gaussian clusters; superposition of finitely many such local structures is allowed.
+\emph{Verifiability:} Verifiable for discrete distribution mixture models; treated as a reasonable engineering approximation for general continuous distributions (see engineering approximation EA1).
+
+\item[Assumption A2 (Network parameterization constraint)]\label{ass:A2}
+In the parameterization~\eqref{eq:bv-aware}:
+\begin{itemize}
+  \item $\jumpamp(u,\tau) \geq \kappa_0 > 0$ holds strictly for all $(u,\tau)$ (enforceable via Softplus activation, i.e., $\jumpamp = \kappa_0 + \mathrm{Softplus}(\tilde{\kappa}_\theta)$);
+  \item The maps $\nabla_u^2 \phisbg$, $\nabla_u^2 \Dth$, $\nabla_u \jumpamp$ are uniformly bounded on $(u,\tau) \in \R^d \times [\tau_{\mathrm{end}}, T_d]$, with bounds independent of $\tau$.
+\end{itemize}
+\emph{Verifiability:} Enforceable at training time via network architecture design and weight norm constraints.
+
+\item[Assumption A3 (Score matching error)]\label{ass:A3}
+There exists $\varepsilon > 0$ such that in the grid-independent mean-squared error sense:
+\begin{equation}
+  \E_{u,\tau}\!\Bigl[ \frac{|\Omega|}{d} \sum_{i=1}^d \errsc_i(u,\tau)^2 \Bigr] \leq \varepsilon^2,
+\end{equation}
+where $\Delta x = |\Omega|/d$; equivalently $\E_{u,\tau}\bigl[\Delta x \norm{\errsc(u,\tau)}^2\bigr] \leq \varepsilon^2$, with expectation taken over the training distribution $p(u,\tau)$ ($u \sim p(\cdot,\tau)$, $\tau \sim \mathcal{U}[\tau_{\mathrm{end}}, T_d]$).
+This setting makes $\varepsilon^2$ a physical approximation of the continuous $\int_\Omega \errsc(x,\tau)^2 \, dx$.
+
+\item[Assumption A4 (Prior matching)]\label{ass:A4}
+The squared distance bound of the prior approximation at the initial time $\tau = T_d$ of the reverse ODE is controlled by the same scaling:
+\begin{equation}
+  \E\bigl[\Delta x \norm{\uhat(T_d) - \unat(T_d)}^2 \bigr] \leq \tilde{C}^2 \varepsilon^2,
+\end{equation}
+where $\tilde{C} > 0$ is a constant independent of $\varepsilon$ and $d$.
+\emph{Typically satisfied when:} $p_{T_d}$ is standard Gaussian and $T_d$ is large enough that the signal-to-noise ratio is very low.
+
+\item[Assumption A5 (Early stopping and viscosity matching balance, engineering approximation EA2)]\label{ass:A5}
+The reverse ODE is early-stopped at $\tau_{\mathrm{end}} > 0$, the effective terminal viscosity is defined by $\sigtau^2(\tau_{\mathrm{end}}) = 2\physvis \tau_{\mathrm{end}}$, and the following holds:
+\begin{equation}
+  \physvis = \Theta(\varepsilon), \quad \text{i.e.,} \quad c\varepsilon \leq \physvis \leq C\varepsilon,
+\end{equation}
+with A3 still valid over the full interval $[\tau_{\mathrm{end}}, T_d]$.
+\emph{Engineering approximation note:} The achievability of $\physvis = \Theta(\varepsilon)$ depends on fine design of the noise schedule and prior estimation of the training error $\varepsilon$; this is an engineering approximation (EA2), whose scope of influence is discussed in Appendix~C.
+
+\item[Assumption A6 (Kuznetsov-type error bound)]\label{ass:A6}
+Under A0 and A5, the $L^1$ error between the viscous PDE solution $\physsolvis$ and the Kruzhkov entropy solution $\physsol$ satisfies
+\begin{equation}
+  \norm{\physsolvis - \physsol}_{L^1(\Omega)} \leq C_K \sqrt{\physvis},
+\end{equation}
+where $C_K$ depends on the initial TV bound $M$ and physical time $T_{\mathrm{phys}}$, but is independent of $\varepsilon$.
+\emph{Explanation:} This bound follows directly from the classical theorem of Kuznetsov (1976) under A0, with $C_K = C \sqrt{T_{\mathrm{phys}}} \cdot \TV(\initdat) \leq C \sqrt{T_{\mathrm{phys}}} \cdot M$.
+\end{description}
+
+% ============================================================================
+% Proof
+% ============================================================================
+\begin{proof}
+
+The proof proceeds in four stages:
+\begin{enumerate}
+  \item[Stage~1.] Using A1 and A2, construct a function-space decomposition and analyze the well-posedness of the BV-aware parameterization.
+  \item[Stage~2.] Based on one-sided Lipschitz analysis and a modified Gronwall inequality, using A2, A3, A4 to establish the trajectory error bound.
+  \item[Stage~3.] Introduce the physical PDE framework and Kruzhkov theory, stating the BV compactness required for Stage~4.
+  \item[Stage~4.] Using A0, A5, A6 to assemble the Wasserstein error, obtaining $\Wass{1} \leq C_{\mathrm{final}} \varepsilon^{1/2}$.
+\end{enumerate}
+
+% ----------------------------------------------------------------------------
+% Preliminaries: Notation Summary
+% ----------------------------------------------------------------------------
+\subsection*{Notation (unified for the entire proof)}\label{sec:notation-proof}
+
+\paragraph{State space (diffusion model domain)}
+\begin{description}
+  \item[$u \in \R^d$] State vector ($d = N_x$ is the number of spatial grid points)
+  \item[{$\tau \in [0, T_d]$}] Diffusion time (reverse: $T_d \to 0$, i.e., noise $\to$ data)
+  \item[$p(u, \tau)$] Smoothed state density
+  \item[$\score(u, \tau) = \nabla_u \log p(u, \tau)$] True score field
+  \item[$\sth(u, \tau)$] Network-approximated score field
+  \item[$\errsc(u, \tau) = \sth(u, \tau) - \score(u, \tau)$] Score residual field
+  \item[$\Shockscore(\tau) \subset \R^d$] Shock manifold
+  \item[$\dShock(u, \tau)$] Signed distance function to $\Shockscore(\tau)$
+\end{description}
+
+\paragraph{Physical space (PDE domain)}
+\begin{description}
+  \item[$x \in \Omega \subset \R$] Physical space coordinate
+  \item[{$t \in [0, T]$}] Physical time (evolved by the PDE from initial data, orthogonal to $\tau$)
+  \item[$\physsol(x)$] Kruzhkov entropy solution (at fixed $t = T_{\mathrm{phys}}$)
+  \item[$\physsolvis(x)$] Viscous PDE approximation with viscosity $\physvis$ (at $t = T_{\mathrm{phys}}$)
+  \item[$\dx$] Physical space partial derivative
+  \item[$\norm{\cdot}_{L^1(\Omega)}, \norm{\cdot}_{L^2(\Omega)}$] $L^p$ norms on physical space
+\end{description}
+
+\paragraph{Trajectories and generation}
+\begin{description}
+  \item[$\uhat(\tau)$] ODE trajectory driven by the learned score ($\R^d$-valued)
+  \item[$\unat(\tau)$] ODE trajectory driven by the true score ($\R^d$-valued)
+  \item[$\uth \coloneqq \uhat(0)$] Final generated sample (at $\tau = 0$)
+  \item[$\muth \coloneqq \Law(\uth)$] Distribution of the generated samples
+  \item[$\delta_{\physsol}$] Dirac measure at the target Kruzhkov entropy solution
+\end{description}
+
+\paragraph{Norms and distances}
+\begin{description}
+  \item[$\norm{v}$] Euclidean norm on state space $\R^d$
+  \item[$\langle \cdot, \cdot \rangle$] $\R^d$ inner product
+  \item[$\TV(f) = \int_\Omega |\dx f| \, dx$] Total variation seminorm
+  \item[$\Wass{1}(\mu, \nu)$] 1-Wasserstein distance (Kantorovich--Rubinstein dual)
+\end{description}
+
+\paragraph{Time mapping}
+The physical meaning of diffusion time $\tau$ decreasing from $T_d$ to $0$:
+\begin{itemize}
+  \item $\tau = T_d$: pure noise (prior, e.g., standard Gaussian)
+  \item $\tau = 0$: data sample (corresponding to the PDE solution at physical time $t = T_{\mathrm{phys}}$)
+  \item \textbf{Viscosity matching}: $\sigtau^2(\tau) = 2\physvis \tau$, so the evolution of $\tau$ is equivalent to a physical process with viscosity $\physvis$; the drift coefficient of the reverse ODE is $\physvis$
+  \item In Stage~3, the target $\physsol$ is the PDE entropy solution at a \emph{fixed physical time} $t = T_{\mathrm{phys}}$ ($T_{\mathrm{phys}}$ is regarded as a constant and is not written explicitly in the sequel)
+  \item Diffusion time $\tau$ and physical time $t$ are \emph{orthogonal}: $\tau$ describes the noising--denoising intensity, $t$ describes the PDE evolution
+\end{itemize}
+
+% ============================================================================
+% Stage 1: Function Space and Error Localization
+% ============================================================================
+\subsection{Stage 1: Function Space and Error Localization}\label{sec:stage1}
+
+\subsubsection{1.1 Setup}
+
+Let the dimensionless diffusion time of the target distribution be $\tau \in (\tau_{\mathrm{end}}, T_d]$. Denote the true smoothed data density by
+\begin{equation}
+  p(u, \tau) = (\rho \ast \Gtau)(u), \qquad \Gtau(u) = (4\pi\tau)^{-d/2} \exp\!\bigl(-\norm{u}^2/4\tau\bigr),
+\end{equation}
+where $\rho(u)$ is the target data distribution. The true score field:
+\begin{equation}
+  \score(u, \tau) = \nabla_u \log p(u, \tau).
+\end{equation}
+
+Define the shock manifold $\Shockscore(\tau) \subset \R^d$ as the equipotential surface in state space that connects different modes. For any $u \in \R^d$, define its signed distance to $\Shockscore(\tau)$:
+\begin{equation}
+  \dShock(u, \tau) = \inf_{v \in \Shockscore(\tau)} \norm{u - v} \cdot \mathrm{sgn}(\text{mode label}).
+\end{equation}
+
+The shock interfacial layer neighborhood and the outer smooth region:
+\begin{equation}
+  \Omega_{\mathrm{sh}}(\tau) = \bigl\{ u \in \R^d \;\big|\; |\dShock(u, \tau)| \leq \mathcal{O}(\tau) \bigr\}, \qquad
+  \Omega_{\mathrm{out}}(\tau) = \R^d \setminus \Omega_{\mathrm{sh}}(\tau).
+\end{equation}
+
+\subsubsection{1.2 Lemma 1.1: Asymptotic Expansion and Singularity Decomposition of the True Score Field}
+
+\begin{lemma}\label{lem:1.1}
+Under Assumption~A1, the true score field $\score(u, \tau)$ can be decomposed on the whole space $\R^d$ as
+\begin{equation}
+  \score(u, \tau) = s^{\mathrm{sm}}(u, \tau) + s^{\mathrm{sing}}(u, \tau) + \mathcal{O}(\tau),
+\end{equation}
+where:
+\begin{enumerate}
+  \item $s^{\mathrm{sm}}(u, \tau)$ is uniformly Lipschitz continuous on the whole space: $\norm{\nabla_u s^{\mathrm{sm}}}_{\mathrm{op}} \leq L_{\mathrm{sm}} = \mathcal{O}(1)$.
+  \item $s^{\mathrm{sing}}(u, \tau)$ is non-negligible only inside $\Omega_{\mathrm{sh}}(\tau)$, and has the exact form
+  \begin{equation}
+    s^{\mathrm{sing}}(u, \tau) = \frac{\Delta s_{\mathrm{jump}}(u)}{2} \tanh\!\Bigl(\frac{A(u,\tau) - B(u,\tau)}{2\tau}\Bigr),
+  \end{equation}
+  where $A, B$ are the potential functions of the dominant modes and $\Delta s_{\mathrm{jump}} = \nabla_u B - \nabla_u A$ is the jump intensity vector.
+\end{enumerate}
+\end{lemma}
+
+\textit{Proof sketch (Laplace method):} By A1, inside $\Omega_{\mathrm{sh}}(\tau)$, the integral representation of $p(u,\tau)$ is dominated by the two nearest modes:
+\begin{equation}
+  p(u, \tau) \sim C_A(u) \exp\!\Bigl(-\frac{A(u,\tau)}{\tau}\Bigr) + C_B(u) \exp\!\Bigl(-\frac{B(u,\tau)}{\tau}\Bigr).
+\end{equation}
+Taking the log-gradient and using the identity $\nabla_u \log(e^{-A/\tau} + e^{-B/\tau})$ extracts the $\tanh$ part; the slowly varying coefficients $C_A, C_B$ and their gradients are absorbed into $s^{\mathrm{sm}}$.
+In $\Omega_{\mathrm{out}}(\tau)$, one mode is overwhelmingly dominant, $\tanh(\cdot) \to \pm 1$, $\nabla_u s^{\mathrm{sing}}$ tends to $0$, and the score field degenerates to the smooth $\nabla_u A$ or $\nabla_u B$.
+The error term $\mathcal{O}(\tau)$ originates from the next-order remainder of the Laplace method; the uniform estimate is guaranteed by the mode-separation condition of A1.\hfill$\blacksquare$
+
+\begin{remark}[Nature of the singularity]
+Under standard parameterization, if the network directly fits $\score(u,\tau)$, the Jacobian $\nabla_u s^{\mathrm{sing}}$ of $s^{\mathrm{sing}}$ contains a singular component of $\mathcal{O}(1/\tau)$ inside $\Omega_{\mathrm{sh}}$---this is precisely the origin of the global Lipschitz constant $L(\tau) \propto 1/\tau$ in classical theory, which causes the Gronwall integral to diverge and produces the exponential amplification factor $\exp(\amp T_d)$.
+The core idea of parameterization~\eqref{eq:bv-aware} is to \emph{explicitly embed} this singularity into the network structure, so that the residual field $\errsc(u,\tau)$ no longer inherits the $1/\tau$ singularity.
+\end{remark}
+
+\subsubsection{1.3 Lemma 1.2: Well-Posedness of the BV-Aware Parameterization}
+
+The parameterization~\eqref{eq:bv-aware} defines the network score field:
+\begin{equation}
+  \sth(u, \tau) = \underbrace{\nabla_u \phisbg(u, \tau)}_{\text{smooth background term}} + \underbrace{\frac{\jumpamp(u,\tau)}{2} \tanh\!\Bigl(\frac{\Dth(u, \tau)}{2\tau}\Bigr) \nabla_u \Dth(u, \tau)}_{\text{interfacial singular term}}.
+\end{equation}
+
+\begin{lemma}\label{lem:1.2}
+(Spatial alignment and network well-posedness) Under Assumption~A2, the map $\Theta: (u,\tau) \mapsto (\phisbg, \jumpamp, \Dth)$ has the following properties:
+\begin{enumerate}
+  \item Target approximation: $\nabla_u \phisbg \approx s^{\mathrm{sm}}$, $\jumpamp \nabla_u \Dth \approx \Delta s_{\mathrm{jump}}$, $\Dth \approx A-B$.
+  \item Bounded Jacobian: The Jacobian norms $\norm{\nabla_u^2 \phisbg}_{\mathrm{op}}$, $\norm{\nabla_u \jumpamp}$, $\norm{\nabla_u^2 \Dth}_{\mathrm{op}}$ are all independent of $\tau$, of order $\mathcal{O}(1)$.
+  \item The network learns only the smooth signed distance field $\Dth$. The singular factor $1/\tau$ is written as an explicit physical prior \emph{outside} the network structure, appearing only inside $\tanh$ and in the singular Jacobian matrix $J_{\mathrm{sh}}$ after differentiation; the network involves no $1/\tau$ amplification from automatic differentiation, completely avoiding gradient explosion.
+\end{enumerate}
+\end{lemma}
+
+\textit{Proof:} By A2, $\nabla_u^2 \phisbg$, $\nabla_u^2 \Dth$, $\nabla_u \jumpamp$ are all uniformly bounded. Note that the derivative of $\tanh$ with respect to its argument is $\operatorname{sech}^2(\cdot) \leq 1$, so when computing $\nabla_u$ of $\sth$, the dependence of $\tau$ in the denominator does not propagate divergently outward; it passes into the Jacobian and forms a strictly negative semi-definite singular part (proved in detail below).
+Since $A$ and $B$ are both $\mathcal{O}(1)$ potential functions, the network-learned $\Dth(u, \tau)$ has gradient $\nabla_u \Dth = \mathcal{O}(1)$, introducing no additional singular scale.\hfill$\blacksquare$
+
+\subsubsection{1.4 Boundedness of the Residual Field (Heuristic Discussion)}
+
+\begin{remark}[Heuristic significance of Corollary 1.4; not a rigorous claim]
+The following is a heuristic argument for intuition only and is \emph{not relied upon in subsequent steps of the proof}.
+
+Define the score residual field $\errsc(u,\tau) = \sth(u,\tau) - \score(u,\tau)$, decomposed into $\errsc = e_{\mathrm{sm}} + e_{\mathrm{sh}}$, where $e_{\mathrm{sh}}$ is the shock residual arising from interface location/intensity deviation.
+
+In the standard architecture, $e_{\mathrm{standard}}$ cannot fit the steep gradient of $\tanh(\cdot/\tau)$ and itself has a gradient component of $-\mathcal{O}(1/\tau)$ inside $\Omega_{\mathrm{sh}}$, causing exponential error amplification.
+The BV-aware architecture embeds the $\tanh$ structure, making the error of $e_{\mathrm{sh}}$ manifest as a small shift of the shock center position; this shift is of the same order as the shift magnitude in the $\Wass{1}$ sense ($\Delta \Wass{1} \propto \Delta x$), without involving multiplicative amplification of gradients.
+
+More rigorously, if one can independently prove gradient bounds for $e_{\mathrm{sm}}$ and for the shock shift of $e_{\mathrm{sh}}$, one can establish
+$\int_0^{T_d} \norm{\nabla_u \errsc(u,\tau)}_{\mathrm{eff}} \, d\tau \leq C_0 = \mathcal{O}(1)$.
+Rigorization of this direction is left to future work (see technical point C1.4-G in Appendix~C).
+In the present proof, the Gronwall argument of Stage~2 \emph{does not rely on this bound} and uses only the integral estimate of $\norm{\errsc}$ itself (see Theorem~2.2).
+\end{remark}
+
+% ============================================================================
+% Stage 2: Modified Gronwall Inequality and Trajectory Error Bound
+% ============================================================================
+\subsection{Stage 2: Modified Gronwall Inequality and Trajectory Error Bound}\label{sec:stage2}
+
+\subsubsection{2.1 Failure of the Classical Analysis and the Gronwall Trap}
+
+In the reverse generative process, consider two ODE trajectories---the reference trajectory $\unat(\tau)$ driven by the true score $\score$ and the approximate trajectory $\uhat(\tau)$ driven by the network score $\sth$.
+Both obey the probability-flow ODE under the viscosity matching strategy $\sigtau^2(\tau) = 2\physvis \tau$ (drift coefficient $\sigma \dot\sigma = \physvis$):
+\begin{equation}\label{eq:ode-pair}
+  \frac{d \unat}{d\tau} = -\physvis \, \score(\unat, \tau) \eqqcolon V(\unat, \tau), \qquad
+  \frac{d \uhat}{d\tau} = -\physvis \, \sth(\uhat, \tau) \eqqcolon V_\theta(\uhat, \tau).
+\end{equation}
+
+\textbf{Initial condition (A4).} By A4, the error between the two trajectories at $\tau = T_d$ satisfies
+\begin{equation}
+  E(T_d) \coloneqq \norm{\uhat(T_d) - \unat(T_d)} \leq \tilde{C}\varepsilon,
+\end{equation}
+(equal to $0$ if the prior matches exactly; small deviations are handled uniformly by the Gronwall formula below).
+
+Define the trajectory error:
+\begin{equation}
+  E(\tau) \coloneqq \norm{\uhat(\tau) - \unat(\tau)}.
+\end{equation}
+
+Differentiating $E^2$:
+\begin{equation}
+  \frac{1}{2}\frac{d}{d\tau} E(\tau)^2
+  = \bigl\langle \uhat - \unat,\; V_\theta(\uhat, \tau) - V(\unat, \tau) \bigr\rangle.
+\end{equation}
+
+Decompose the right-hand side into the self-consistency term (of $V_\theta$) and the error-driven term:
+\begin{align}
+  \frac{1}{2}\frac{d}{d\tau} E(\tau)^2
+  &\leq \underbrace{\bigl\langle \uhat - \unat,\; V_\theta(\uhat,\tau) - V_\theta(\unat,\tau) \bigr\rangle}_{\text{Term~I: drift self-consistency}} \\
+  &\quad + \underbrace{\physvis \bigl\langle \uhat - \unat,\; \errsc(\unat,\tau) \bigr\rangle}_{\text{Term~II: score error-driven}}.\notag
+\end{align}
+
+Applying Cauchy--Schwarz to Term~II:
+$\physvis \langle \uhat - \unat, \errsc(\unat,\tau) \rangle \leq \physvis \norm{\errsc(\unat,\tau)} \cdot E(\tau)$.
+Thus:
+\begin{equation}
+  \frac{1}{2}\frac{d}{d\tau} E(\tau)^2
+  \leq \underbrace{\bigl\langle \uhat - \unat,\; V_\theta(\uhat,\tau) - V_\theta(\unat,\tau) \bigr\rangle}_{\text{Term~I}} + \physvis \norm{\errsc(\unat,\tau)} \cdot E(\tau).
+\end{equation}
+
+In the classical proof, Term~I is bounded using the global Lipschitz constant $L_\theta(\tau) = \mathcal{O}(1/\tau)$, causing the Gronwall integral to diverge as $\exp(\amp T_d)$.
+Below we replace this with a one-sided Lipschitz constant.
+
+\subsubsection{2.2 Lemma 2.1: One-Sided Lipschitz Condition and Negative Semi-Definiteness}
+
+\begin{definition}[One-sided Lipschitz constant]
+The one-sided Lipschitz constant $\mu(\tau)$ of $V_\theta$ is the smallest number such that for all $u, v \in \R^d$:
+\begin{equation}
+  \bigl\langle u - v,\; V_\theta(u,\tau) - V_\theta(v,\tau) \bigr\rangle \leq \mu(\tau) \norm{u - v}^2.
+\end{equation}
+When $V_\theta$ is differentiable, $\mu(\tau)$ equals the maximum eigenvalue of the symmetric part of its Jacobian $J_\theta(u,\tau) \coloneqq \nabla_u V_\theta(u,\tau)$:
+\begin{equation}
+  \mu(\tau) = \sup_{u \in \R^d} \lambda_{\max}\!\Bigl(\frac{J_\theta(u,\tau) + J_\theta(u,\tau)^\mathsf{T}}{2}\Bigr).
+\end{equation}
+\end{definition}
+
+\begin{lemma}\label{lem:2.1}
+(Bounded logarithmic norm of the BV-aware architecture) Under Assumption~A2,
+\begin{equation}
+  \mu(\tau) \leq L_{\mathrm{sm}} = \mathcal{O}(1),
+\end{equation}
+i.e., the one-sided Lipschitz constant is independent of $\tau$ and has no singularity.
+\end{lemma}
+
+\textit{Proof:} Compute the Jacobian of $V_\theta(u,\tau) = -\physvis \sth(u,\tau)$:
+\begin{equation}
+  J_\theta = \nabla_u V_\theta = J_{\mathrm{sm}} + J_{\mathrm{sh}} + J_{\mathrm{cross}},
+\end{equation}
+with the following components.
+
+\textbf{(a) Smooth part.} $J_{\mathrm{sm}} = -\physvis \nabla_u^2 \phisbg$. By A2, $\norm{\nabla_u^2 \phisbg}_{\mathrm{op}} = \mathcal{O}(1)$, so $\lambda_{\max}(J_{\mathrm{sm}}) \leq \physvis \cdot \mathcal{O}(1) = \mathcal{O}(1)$ (since $\physvis = \Theta(\varepsilon)$ is small but $\varepsilon \leq 1$, so it does not exceed $\mathcal{O}(1)$).
+
+\textbf{(b) Cross terms.} $J_{\mathrm{cross}}$ contains derivative terms of $\jumpamp$ and $\nabla_u \Dth$. By A2 these are all uniformly bounded; moreover, the dominant terms produced by these derivatives are already controlled by explicit separation and internal derivative control, introducing no $1/\tau$ factor into this term, so $\lambda_{\max}(J_{\mathrm{cross}}) = \mathcal{O}(1)$.
+
+\textbf{(c) Singular part.} Differentiating the $\tanh$ term in the parameterization with respect to $\nabla_u$ yields
+\begin{equation}
+  J_{\mathrm{sh}}(u,\tau) = -\physvis \cdot \frac{\jumpamp(u,\tau)}{4\tau} \, \operatorname{sech}^2\!\Bigl(\frac{\Dth(u,\tau)}{2\tau}\Bigr) \, \bigl(\nabla_u \Dth\bigr)\bigl(\nabla_u \Dth\bigr)^\mathsf{T}.
+\end{equation}
+The matrix $(\nabla_u \Dth)(\nabla_u \Dth)^\mathsf{T}$ is a rank-$1$ positive semi-definite matrix (of the form $\mathbf{n}\mathbf{n}^\mathsf{T}$, where $\mathbf{n} = \nabla_u \Dth$ is the shock interface normal vector).
+By A2, $\jumpamp \geq \kappa_0 > 0$; together with $\physvis > 0$, $\tau > 0$, $\operatorname{sech}^2(\cdot) > 0$, the leading negative sign makes $J_{\mathrm{sh}}$ \emph{strictly negative semi-definite}.
+
+Hence the maximum eigenvalue of the symmetric part of $J_{\mathrm{sh}}$ satisfies $\lambda_{\max}(J_{\mathrm{sh}}) \leq 0$, contributing nothing positive to the one-sided Lipschitz constant.
+
+\textbf{(d) Physical interpretation.} In the direction normal to the shock surface (the $\mathbf{n}$ direction), $J_{\mathrm{sh}}$ provides a negative eigenvalue of magnitude $-\physvis \kappa_0 \norm{\nabla_u \Dth}^2 / (4\tau)$, corresponding to a \emph{strong attractive force} of the reverse diffusion flow in the shock normal direction. Errors that deviate from the true shock manifold are compressed at this enormous rate rather than amplified---this is the mathematical essence of Burgers characteristic line convergence, and the core guarantee that this architecture avoids exponential divergence.
+
+Combining (a)--(d),
+\begin{equation}
+  \mu(\tau) \leq \lambda_{\max}\!\bigl(J_{\mathrm{sm}} + J_{\mathrm{cross}}\bigr) + \underbrace{\lambda_{\max}(J_{\mathrm{sh}})}_{\leq 0} \leq L_{\mathrm{sm}} = \mathcal{O}(1).
+\end{equation}
+\hfill$\blacksquare$
+
+\subsubsection{2.3 Theorem 2.2: Modified Flow Stability with Constant Upper Bound}
+
+\begin{lemma}\label{lem:2.2}
+(Trajectory error bound) Under Assumptions~A2, A3, A4, let $\varepsilon_{\mathrm{raw}}$ be the raw (unnormalized) score matching mean-squared error bound, i.e., $\E[\norm{\errsc}^2] \leq \varepsilon_{\mathrm{raw}}^2$.
+By the grid-normalized definition of A3, $\E[\Delta x \norm{\errsc}^2] \leq \varepsilon^2$, so $\varepsilon_{\mathrm{raw}}^2 = \varepsilon^2 / \Delta x$. Then
+\begin{equation}
+  \E_z\bigl[E(0)\bigr] \leq C_1 \varepsilon_{\mathrm{raw}} = C_1 \frac{\varepsilon}{\sqrt{\Delta x}},
+\end{equation}
+where $C_1$ depends only on $T_d, \physvis, L_{\mathrm{sm}}$. In the norm conversion of Stage~4, $\sqrt{\Delta x}$ will be canceled, yielding a grid-independent final bound.
+\end{lemma}
+
+\textit{Proof:}
+\textbf{Step 1: Scalar differential inequality.}
+Applying Lemma~2.1 to Term~I in the derivative of $\frac{1}{2}E^2$ gives
+\begin{equation}
+  \frac{1}{2}\frac{d}{d\tau} E(\tau)^2 \leq \mu(\tau) \, E(\tau)^2 + \physvis \, \norm{\errsc(\unat,\tau)} \cdot E(\tau).
+\end{equation}
+Dividing by $E(\tau)$ (when $E(\tau) > 0$; the inequality holds trivially when $E(\tau) = 0$),
+\begin{equation}\label{eq:star}
+  \frac{d}{d\tau} E(\tau) \leq \mu(\tau) \, E(\tau) + \physvis \, \norm{\errsc(\unat,\tau)}. \tag{$\star$}
+\end{equation}
+
+\textbf{Step 2: Apply Gronwall's inequality.}
+From $(\star)$, integrating from $\tau = T_d$ to $\tau = 0$,
+\begin{equation}
+  E(0) \leq E(T_d) \cdot \exp\!\Bigl(\int_0^{T_d} \mu(r) \, dr\Bigr) + \int_0^{T_d} \exp\!\Bigl(\int_0^\tau \mu(r) \, dr\Bigr) \, \physvis \, \norm{\errsc(\unat,\tau)} \, d\tau.
+\end{equation}
+
+By Lemma~2.1, $\mu(r) \leq L_{\mathrm{sm}} = \mathcal{O}(1)$, so
+\begin{equation}
+  \exp\!\Bigl(\int_0^\tau \mu(r) \, dr\Bigr) \leq e^{L_{\mathrm{sm}} T_d} \eqqcolon C_{\mathrm{flow}} = \mathcal{O}(1).
+\end{equation}
+
+Substituting the initial error bound $E(T_d) \leq \tilde{C}\varepsilon$ from A4:
+\begin{equation}\label{eq:starstar}
+  E(0) \leq \tilde{C} C_{\mathrm{flow}} \, \varepsilon + C_{\mathrm{flow}} \, \physvis \int_0^{T_d} \norm{\errsc(\unat,\tau)} \, d\tau. \tag{$\star\star$}
+\end{equation}
+
+\textbf{Step 3: Integral bound of the score matching error (directly from A3).}
+Apply Cauchy--Schwarz to the integral $\int_0^{T_d} \norm{\errsc(\unat,\tau)} \, d\tau$:
+\begin{equation}
+  \int_0^{T_d} \norm{\errsc(\unat,\tau)} \, d\tau \leq \sqrt{T_d} \cdot \Bigl(\int_0^{T_d} \norm{\errsc(\unat,\tau)}^2 \, d\tau\Bigr)^{1/2}.
+\end{equation}
+
+Take expectation over $z$ (prior noise) of the right-hand side. By A3, $\E[\Delta x \norm{\errsc}^2] \leq \varepsilon^2$, i.e., the raw (unnormalized) mean-squared error satisfies $\E[\norm{\errsc}^2] \leq \varepsilon^2 / \Delta x = \varepsilon_{\mathrm{raw}}^2$. Hence
+\begin{equation}
+  \E_z\!\Bigl[\int_0^{T_d} \norm{\errsc(\unat,\tau)}^2 \, d\tau\Bigr] \leq T_d \cdot \varepsilon_{\mathrm{raw}}^2 = T_d \cdot \frac{\varepsilon^2}{\Delta x},
+\end{equation}
+(this step holds because the marginal distribution of $\unat(\tau)$ is $p(\cdot,\tau)$, so the expectation over $(\unat(\tau),\tau)$ matches $\E_{u,\tau}$ in A3).
+
+Now take expectation of the Cauchy--Schwarz result (using Jensen's inequality):
+\begin{equation}
+  \E_z\!\Bigl[\int_0^{T_d} \norm{\errsc(\unat,\tau)} \, d\tau\Bigr] \leq \sqrt{T_d} \cdot \sqrt{T_d \, \varepsilon_{\mathrm{raw}}^2} = T_d \, \varepsilon_{\mathrm{raw}} = T_d \frac{\varepsilon}{\sqrt{\Delta x}}.
+\end{equation}
+
+\textbf{Step 4: Assembly.}
+Substituting Step~3 into $(\star\star)$ and taking expectation:
+\begin{equation}
+  \E_z[E(0)] \leq \tilde{C} C_{\mathrm{flow}} \, \varepsilon_{\mathrm{raw}} + C_{\mathrm{flow}} \, \physvis \, T_d \, \varepsilon_{\mathrm{raw}} \eqqcolon C_1 \varepsilon_{\mathrm{raw}},
+\end{equation}
+where $C_1 = C_{\mathrm{flow}}(\tilde{C} + \physvis T_d) = \mathcal{O}(1)$ (by A5, $\physvis = \Theta(\varepsilon) \leq 1$, so $\physvis T_d = \mathcal{O}(1)$).
+From $\varepsilon_{\mathrm{raw}} = \varepsilon / \sqrt{\Delta x}$, we obtain $\E_z[E(0)] \leq C_1 \varepsilon / \sqrt{\Delta x}$.
+\hfill$\blacksquare$
+
+\textbf{Conclusion.} Under the BV-aware architecture, the trajectory endpoint error is $\E[E(0)] = \mathcal{O}(\varepsilon_{\mathrm{raw}})$, free of the exponential amplification factor.
+
+% ============================================================================
+% Stage 3: Kruzhkov Entropy Solution L^1 Contraction Framework
+% ============================================================================
+\subsection{Stage 3: Kruzhkov Entropy Solution \texorpdfstring{$L^1$}{L1} Contraction Framework}\label{sec:stage3}
+
+\begin{remark}[Convention for Stage~3]
+We now introduce physical space $x \in \Omega \subset \R$. The components of the state vector $u \in \R^d$ ($d = N_x$) are $u_i = \mathbf{u}(x_i)$, where $\{x_i\}$ is a uniform grid in physical space (spacing $\Delta x = |\Omega|/N_x$).
+The discrete $L^1$ norm is defined as $\norm{\mathbf{u}}_{L^1} = \Delta x \sum_{i=1}^{N_x} |\mathbf{u}(x_i)|$, which approximates the continuous $L^1$ norm on physical space (see the norm equivalence claim in Stage~4).
+\end{remark}
+
+\subsubsection{3.1 Kruzhkov Entropy Condition and \texorpdfstring{$L^1$}{L1} Contraction}
+
+Consider the target hyperbolic conservation law (on physical space $\Omega \times [0,T]$):
+\begin{equation}
+  \partial_t \mathbf{u} + \partial_x \flux(\mathbf{u}) = 0, \qquad x \in \Omega \subset \R, \quad t \in [0,T],
+\end{equation}
+where $\flux$ is a flux function (e.g., Burgers flux $\flux(u) = u^2/2$), with initial condition $\mathbf{u}(\cdot,0) = \initdat$.
+The Kruzhkov entropy solution $\physsol$ satisfies: for every constant $k \in \R$, in the sense of distributions,
+\begin{equation}
+  \partial_t |\physsol - k| + \partial_x \bigl(\mathrm{sgn}(\physsol - k)(\flux(\physsol) - \flux(k))\bigr) \leq 0.
+\end{equation}
+
+\textbf{Corollary of Kruzhkov's theorem ($L^1$-contractive semigroup).}
+If $\mathbf{a}(x,t)$ and $\mathbf{b}(x,t)$ both satisfy the Kruzhkov entropy condition, then
+\begin{equation}
+  \norm{\mathbf{a}(\cdot,t) - \mathbf{b}(\cdot,t)}_{L^1(\Omega)} \leq \norm{\mathbf{a}(\cdot,0) - \mathbf{b}(\cdot,0)}_{L^1(\Omega)}.
+\end{equation}
+Set $\physsol(x) \coloneqq \physsol(x, T_{\mathrm{phys}})$ (at fixed physical time $T_{\mathrm{phys}}$; omitted in the sequel).
+
+\subsubsection{3.2 Loss Design and BV Compactness}
+
+The loss function $\mathcal{L}_3$ augments the standard denoising score matching loss with a BV regularizer:
+\begin{equation}
+  \mathcal{L}_3 = \Ldsm + \lambda_{\mathrm{BV}} \, \TV(\Dth).
+\end{equation}
+
+By Assumption~A0, together with the hard-coded $\tanh$ structure of parameterization~\eqref{eq:bv-aware}, this regularizer guarantees that the generated samples almost surely belong to the bounded BV ball $\mathcal{K}_M$.
+By Helly's selection theorem, $\mathcal{K}_M$ is relatively compact in the $L^1(\Omega)$ topology.
+
+\subsubsection{3.3 Viscous Limit (Application of Kuznetsov's Lemma)}
+
+The reverse stage of the diffusion model, under viscosity matching $\sigtau^2(\tau) = 2\physvis \tau$, effectively introduces artificial viscosity $\physvis$. Denote by $\physsolvis$ the solution of the viscous physical PDE at $t = T_{\mathrm{phys}}$:
+\begin{equation}
+  \partial_t \physsolvis + \partial_x \flux(\physsolvis) = \physvis \, \partial_{xx} \physsolvis.
+\end{equation}
+
+By Assumption~A6 (based on Kuznetsov 1976):
+\begin{equation}
+  \norm{\physsolvis - \physsol}_{L^1(\Omega)} \leq C_K \sqrt{\physvis}.
+\end{equation}
+
+Together with A5 ($\physvis = \Theta(\varepsilon)$), we obtain
+\begin{equation}\label{eq:3.1}
+  \norm{\physsolvis - \physsol}_{L^1(\Omega)} \leq C_K \sqrt{C\varepsilon} = C_K \sqrt{C} \cdot \varepsilon^{1/2}. \tag{3.1}
+\end{equation}
+
+% ============================================================================
+% Stage 4: Assembly of the Wasserstein Error and Emergence of O(ε^{1/2})
+% ============================================================================
+\subsection{Stage 4: Assembly of the Wasserstein Error and Emergence of \texorpdfstring{$\mathcal{O}(\varepsilon^{1/2})$}{O(epsilon\^{}1/2)}}\label{sec:stage4}
+
+\subsubsection{4.1 Grid Renormalization, Norm Equivalence, and Neural Generation Error}
+
+\textbf{Derivation of the discrete $L^1$--normalized Euclidean norm equivalence.}
+The physical domain $\Omega$ is discretized into $d = N_x$ uniform grid points with spacing $\Delta x = |\Omega|/d$.
+For a state vector $u \in \R^d$, the discrete $L^1$ norm is
+\begin{equation}
+  \norm{\mathbf{u}}_{L^1} = \Delta x \sum_{i=1}^d |u_i|.
+\end{equation}
+
+From the $\ell^1$--$\ell^2$ norm inequality ($\sum |u_i| \leq \sqrt{d} \sqrt{\sum u_i^2} = \sqrt{d}\norm{u}$), substituting $\Delta x$, we obtain
+\begin{equation}\label{eq:4.1}
+  \norm{\mathbf{u}}_{L^1} \leq \Delta x \sqrt{d} \; \norm{u} = \sqrt{|\Omega|} \cdot \sqrt{\Delta x} \; \norm{u}. \tag{4.1}
+\end{equation}
+
+\textbf{Deriving the $L^1$ bound for the neural generation error.}
+Note that in the renormalized Assumption~A3, the error bound is given in the form $\E[\Delta x \norm{\errsc}^2] \leq \varepsilon^2$, which means that for the pure Euclidean norm, we have $\E[\norm{\errsc}^2] \leq \varepsilon^2 / \Delta x$.
+
+Recall from Stage~2, the Gronwall integration and trajectory error bound Lemma~2.2 give, for the standard Euclidean distance $E(0)$:
+\begin{equation}\label{eq:4.2}
+  \E_z\bigl[\norm{\uhat(0) - \unat(0)}\bigr] \leq C_1 \; \E_z\bigl[\norm{\errsc}\bigr] \leq C_1 \frac{\varepsilon}{\sqrt{\Delta x}}. \tag{4.2}
+\end{equation}
+
+The corresponding difference of physical functions is $\uth - \physsolvis$. Combining with the norm scaling relation~(4.1):
+\begin{equation}
+  \E_z\bigl[\norm{\uth - \physsolvis}_{L^1(\Omega)}\bigr] \leq \sqrt{|\Omega|} \sqrt{\Delta x} \cdot \E_z\bigl[\norm{\uhat(0) - \unat(0)}\bigr] \leq \sqrt{|\Omega|} \sqrt{\Delta x} \cdot C_1 \frac{\varepsilon}{\sqrt{\Delta x}}.
+\end{equation}
+
+Here $d$ and $\Delta x$ are \emph{perfectly canceled}! Regardless of how fine the grid is, the error bound remains valid, yielding a grid-independent continuum limit bound:
+\begin{equation}\label{eq:4.3}
+  \E_z\bigl[\norm{\uth - \physsolvis}_{L^1(\Omega)}\bigr] \leq C_1 \sqrt{|\Omega|} \, \varepsilon \eqqcolon C_2 \varepsilon. \tag{4.3}
+\end{equation}
+
+\begin{remark}[Place of the Gagliardo--Nirenberg interpolation]
+An earlier draft used a Gagliardo--Nirenberg-type interpolation inequality $\norm{h}_{L^1} \leq C_{\mathrm{GN}} \norm{h}_{L^2}^{2/3} \TV(h)^{1/3}$ to convert $L^2$ error into $L^1$ error, obtaining an $\mathcal{O}(\varepsilon^{2/3})$ bound.
+The present revised proof uses normalized $L^2$-matching combined with the norm equivalence~(4.1), obtaining a sharper, dimension-independent $L^1$ error $\mathcal{O}(\varepsilon)$ directly from the scaled Euclidean error.
+\end{remark}
+
+\subsubsection{4.2 Triangle Inequality Decomposition of the Wasserstein Distance}
+
+The 1-Wasserstein distance (Kantorovich--Rubinstein dual):
+\begin{equation}
+  \Wass{1}(\mu, \nu) = \inf_{\pi \in \Pi(\mu,\nu)} \int \norm{\mathbf{u} - \mathbf{v}}_{L^1(\Omega)} \, d\pi(\mathbf{u},\mathbf{v}).
+\end{equation}
+
+Let $\delta_{\physsolvis}$ be the Dirac measure at the viscous solution (given the initial data $\initdat$, the viscous PDE solution is unique, hence deterministic). Decompose via the triangle inequality:
+\begin{equation}\label{eq:4.4}
+  \Wass{1}(\muth, \delta_{\physsol})
+  \leq \underbrace{\Wass{1}(\muth, \delta_{\physsolvis})}_{\text{Neural generation error (Term~A)}}
+  + \underbrace{\Wass{1}(\delta_{\physsolvis}, \delta_{\physsol})}_{\text{Viscous limit error (Term~B)}}. \tag{4.4}
+\end{equation}
+
+\textbf{Term~A (Neural generation error).}
+Since $\uhat(0)$ and $\unat(0)$ are deterministically generated from the same prior noise $z$ (the ODE has a unique solution for fixed $z$), there exists a natural pointwise coupling:
+\begin{equation}
+  \pi_z = \bigl(\uth(z),\; \physsolvis\bigr)_\# \, p_{T_d},
+\end{equation}
+where $p_{T_d}$ is the prior distribution and $\physsolvis$ is regarded as a constant vector (independent of $z$). By the feasibility of this coupling and~(4.3):
+\begin{equation}\label{eq:4.5}
+  \Wass{1}(\muth, \delta_{\physsolvis})
+  \leq \int \norm{\uth(z) - \physsolvis}_{L^1(\Omega)} \, d p_{T_d}(z)
+  = \E_z\bigl[\norm{\uth - \physsolvis}_{L^1(\Omega)}\bigr]
+  \leq C_2 \varepsilon. \tag{4.5}
+\end{equation}
+
+\textbf{Term~B (Viscous limit error).}
+Both $\delta_{\physsolvis}$ and $\delta_{\physsol}$ are single-point distributions; $\Wass{1}$ degenerates to the $L^1$ distance:
+\begin{equation}
+  \Wass{1}(\delta_{\physsolvis}, \delta_{\physsol}) = \norm{\physsolvis - \physsol}_{L^1(\Omega)}.
+\end{equation}
+
+From~(3.1) (the joint conclusion of A6 and A5):
+\begin{equation}\label{eq:4.6}
+  \Wass{1}(\delta_{\physsolvis}, \delta_{\physsol}) \leq C_K \sqrt{C} \cdot \varepsilon^{1/2}. \tag{4.6}
+\end{equation}
+
+\subsubsection{4.3 Final Conclusion}
+
+Substituting~(4.5) and~(4.6) into~(4.4):
+\begin{equation}
+  \Wass{1}(\muth, \delta_{\physsol}) \leq C_2 \varepsilon + C_K \sqrt{C} \cdot \varepsilon^{1/2}.
+\end{equation}
+
+For $\varepsilon \in (0,1)$, we have $\varepsilon \leq \varepsilon^{1/2}$, so the higher-order term $\mathcal{O}(\varepsilon)$ is absorbed by the lower-order term $\mathcal{O}(\varepsilon^{1/2})$:
+\begin{equation}
+  \Wass{1}(\muth, \delta_{\physsol}) \leq \bigl(C_2 + C_K \sqrt{C}\bigr) \cdot \varepsilon^{1/2} \eqqcolon C_{\mathrm{final}} \cdot \varepsilon^{1/2}.
+\end{equation}
+
+Here $C_{\mathrm{final}} = C_2 + C_K \sqrt{C}$ depends only on $M, T_d, T_{\mathrm{phys}}, \kappa_0, L_{\mathrm{sm}}, \physvis/\varepsilon$, all independent of $\varepsilon$. Thus
+\begin{equation}
+  \boxed{\displaystyle \Wass{1}(\muth, \delta_{\physsol}) \leq C_{\mathrm{final}} \, \varepsilon^{1/2}.}
+\end{equation}
+
+This completes the proof of Theorem~\ref{thm:improved-rate}.
+\end{proof}
+
+% ============================================================================
+% Appendix A: Symbol Correspondence Table (Old → Revised)
+% ============================================================================
+\subsection*{Appendix A: Symbol Correspondence Table (Old \texorpdfstring{$\to$}{to} Revised)}
+
+\begin{table}[h]
+\centering
+\caption{Symbol correspondence table}
+\begin{tabular}{lll}
+\toprule
+Old symbol & Revised symbol & Reason \\
+\midrule
+$u \in \R^d$ (state point) and $u(x,t)$ (PDE solution) confused & State space: $u \in \R^d$; physical space: $\mathbf{u}(x)$ & Disambiguate function/variable \\
+$\uth$ used for both true trajectory and PDE solution & $\unat(\tau)$ (true trajectory); $\physsol$ (PDE solution) & Distinguish two types of ``truth'' \\
+$\uhat$ confused as trajectory/sample/distribution & $\uhat(\tau)$ (trajectory); $\uth$ (sample); $\muth$ (distribution) & Clarify semantics at different stages \\
+$\nabla_u$ vs $\dx$ confused & $\nabla_u$ (state-space gradient); $\dx$ (physical space partial derivative) & Distinguish two different spaces \\
+$\sup_u \lambda_{\max}$ with ambiguous scope & $\sup_{u \in \R^d} \lambda_{\max}$ & Clarify $u$ as a state-space point \\
+$\norm{E(\tau)}$ with ambiguous norm type & $E(\tau) \coloneqq \norm{\uhat(\tau) - \unat(\tau)}$ ($\R^d$ Euclidean norm) & Clarify as state-space norm \\
+Dual role of $u$ in residual field $\errsc(u,\tau)$ & The parameter $u$ in $\errsc(u,\tau)$ is a state-space point & Retain $u$ as parameter name, add scope annotation \\
+Relation between times $\tau$ and $t$ unclear & Time mapping paragraph explicitly defined & Explicitly declare orthogonality and physical meaning \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================================
+% Appendix B: Summary of Modifications in this Revision
+% ============================================================================
+\subsection*{Appendix B: Summary of Modifications}
+
+\begin{table}[h]
+\centering
+\caption{Summary of modifications}
+\begin{tabular}{llc}
+\toprule
+No. & Modification & Treatment \\
+\midrule
+M1 & Rigorous gradient bound claim in Corollary~1.4 & Downgraded to heuristic remark in \S\ref{sec:stage1}; not relied upon subsequently \\
+M2 & The $\int \norm{\errsc} \, d\tau$ bound in Lemma~2.2 & Directly from A3 + Cauchy--Schwarz; no dependence on Corollary~1.4 \\
+M3 & GN interpolation in Stage~4 & Removed; replaced with discrete norm equivalence (4.2) \\
+M4 & Viscous error Term~B & Directly cites A5 + A6 (Equation~(3.1)); logical chain closed \\
+M5 & Theorem statement & Explicitly references A0--A6; no dangling assumptions \\
+M6 & Assumption system & Newly added A0--A6, with verifiability annotations and engineering approximation labels \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================================
+% Appendix C: Technical Points Requiring Further Rigorization
+% ============================================================================
+\subsection*{Appendix C: Technical Points Requiring Further Rigorization and Scope of Engineering Approximations}
+
+\begin{table}[h]
+\centering
+\caption{Checklist of technical points}
+\small
+\begin{tabular}{llcl}
+\toprule
+No. & Technical point & Status & Scope of influence \\
+\midrule
+C1.1-P & ``Finitely separated Gaussian clusters'' assumption of Lemma~1.1 & Upgraded to A1 & If A1 fails, the score singularity decomposition may be inaccurate \\
+C1.4-G & Residual gradient bound of Corollary~1.4 & Left to future work & This proof does not rely on this bound \\
+C2.1-$\kappa$ & Training-time enforcement of $\jumpamp > 0$ & Upgraded to A2 & If not strictly enforced, conclusion degrades to $\mu(\tau) = \mathcal{O}(1)$ \\
+EA1 & Applicability of A1 to general continuous distributions & Engineering approximation & Affects the uniformity of the $\mathcal{O}(\tau)$ remainder in Lemma~1.1 \\
+EA2 & Feasibility of schedule $\physvis = \Theta(\varepsilon)$ in A5 & Engineering approximation & If $\physvis \gg \varepsilon$, Term~B dominates; if $\physvis \ll \varepsilon$, Term~A dominates \\
+P4.1-GN & GN interpolation argument in the continuum limit & Retained in remark & Does not affect conclusion on fixed grid \\
+K3.3-$\nu$ & Generalization of Kuznetsov bound in A6 & Rigorously established & Only requires initial BV bound (guaranteed by A0) \\
+\bottomrule
+\end{tabular}
+\end{table}

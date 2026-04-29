@@ -1,0 +1,87 @@
+%==============================================================================
+% Appendix A3 · Implementation Details
+%==============================================================================
+\section{Implementation Details}
+\label{appx:impl}
+
+\subsection{Network architecture}
+\label{appx:impl:arch}
+
+All experiments use a 1D U-Net backbone with four down/up-sampling stages and
+GroupNorm (8 groups). The baseline and StandardScore variants use base
+dimension $\dim=64$ ($\approx 0.4$\,M parameters); the BV-aware variant
+(Eq.~\ref{eq:bv-aware}) uses $\dim=128$ ($\approx 7.7$\,M parameters). The
+architecture follows the {EDM} preconditioning (Karras et al., 2022):
+$D_{\theta}(x,\sigma) = c_{\mathrm{skip}}(\sigma)\,x + c_{\mathrm{out}}(\sigma)\,F_{\theta}(c_{\mathrm{in}}(\sigma)\,x,\;c_{\mathrm{noise}}(\sigma))$,
+with $\sigma_{\mathrm{data}}=0.5$. The BV-aware parameterization decomposes
+the score into three sub-networks: $\phisbg$ (the U-Net described above),
+$\phissh$ (two Conv1d layers, 32 channels, kernel size 3, SiLU activation),
+and $\jumpamp$ (two Conv1d layers, 16 channels, kernel size 1, SiLU, with a
+Softplus gate enforcing $\jumpamp>0$). The Tweedie inversion
+$D_{x} = x + \sigma^{2}s_{\theta}$ is applied at the output to maintain
+compatibility with the EDM loss and sampler.
+
+\subsection{Training}
+\label{appx:impl:train}
+
+All models are trained for the stated number of epochs (200 for BV-aware,
+50 for StandardScore and Baseline) using the Adam optimiser with learning
+rate $2\times10^{-4}$, batch size 64, no weight decay, and a fixed random
+seed (PyTorch default; $\mathrm{seed}=0$ for data generation). The
+viscosity-matched schedule sets $\physvis=1.0$, $T_{d}=1.0$, giving
+$\sigma(\tau) = \sqrt{2\tau}$ with $\sigma\in[0,\sqrt{2}]$. The EDM baseline
+uses the standard log-normal schedule $\ln\sigma\sim\mathcal{N}(-1.2,\,1.44)$.
+Loss weights are $\lambda_{\mathrm{DSM}}=1.0$, $\lambda_{\BV}=0.1$ for all
+EntroDiff configurations; the time-consistency term (Section~\ref{sec:exp:ablation})
+uses $\lambda_{\mathrm{time}}=1.0$. Training was performed on a single NVIDIA
+GeForce GPU with 24\,GB memory (RTX 3090/4090 class); one full run of the
+BV-aware configuration (200 epochs) completes in approximately 35 minutes.
+
+\subsection{Sampling}
+\label{appx:impl:sample}
+
+The Heun second-order integrator (Algorithm~\ref{alg:entrodiff-sample}) uses
+$N_{\tau}=50$ steps as default, with ablations at $N_{\tau}\in\{10,25,50,100\}$.
+The Godunov-form {PDE} guidance coefficient $\zeta_{\mathrm{PDE}}$ is set to
+$0$ for unconditional generation; an ablation on $\zeta_{\mathrm{PDE}}\in\{0,0.1,0.5,1.0\}$
+(Figure~A3 in Appendix~\ref{appx:extra-exp}) confirms that the guidance term is numerically
+stable across all tested values but, for unconditional sampling, does not
+improve $\Wass{1}$ beyond the architectural prior, since the $\Lpde^{\mathrm{Godunov}}$
+minimiser at unconstrained initial conditions is the trivial solution $u\equiv0$.
+The time-step of the Godunov residual matches the data generation:
+$\Delta t=5\times10^{-3}$, $\Delta x=2\pi/128$.
+The guidance gradient is clipped to unit norm per spatial channel to prevent
+overflow from the large Godunov residuals of random initial noise.
+
+\subsection{Compute and reproducibility}
+\label{appx:impl:compute}
+
+All experiments were conducted on a Linux workstation with three NVIDIA GPUs
+(24\,GB each), 125\,GB RAM, and an NVMe SSD. Data generation (5,000 trajectories
+of 1D Burgers at $N_{x}=128$) completes in under two minutes. The full
+experimental pipeline, including data generation, training, and evaluation
+scripts, is available in the anonymised supplementary material under the
+MIT license. Key hyperparameters are summarised in Table~\ref{tab:hyperparams}.
+
+\begin{table}[h]
+    \caption{Hyperparameter summary.}
+    \label{tab:hyperparams}
+    \centering
+    \begin{tabular}{ll}
+        \toprule
+        Parameter & Value \\
+        \midrule
+        Optimiser & Adam \\
+        Learning rate & $2\times10^{-4}$ \\
+        Batch size & 64 \\
+        $\physvis$ (schedule) & 1.0 \\
+        $T_{d}$ & 1.0 \\
+        $\lambda_{\BV}$ & 0.1 \\
+        Heun steps $N_{\tau}$ & 50 \\
+        Data samples & 5,000 \\
+        Spatial grid $N_{x}$ & 128 \\
+        Temporal steps $N_{t}$ & 100 \\
+        Physical time $T$ & 0.5 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
