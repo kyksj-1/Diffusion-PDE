@@ -4,45 +4,46 @@
 
 ---
 
-## 当前状态（2026-04-29）
+## 当前状态（2026-04-29 晚）
 
-**论文**：§1–§4 全实写（含 5 大定理附录）；§5 (§7) Experiments 和 §6 (§8) Conclusion 仍是 `\todo` 占位。
+**实验**：E1 Burgers 完整闭环完成。服务器上 3 条训练线跑通：
+- StandardScore Ours (0.4M, 50ep) | Baseline (0.4M, 50ep) | **BVAwareScore (7.7M, 200ep)**
+- eval_viz 支持多模型 / 多步数 / 多 zeta_pde 对比
+- PDE guidance 已实现但仅适用于条件生成 (无条件采样推往零解)
 
-**代码**：8 核心源文件全实写 + `generate_data.py` + `train_mvp.py` 均已跑通。E1 数据 246MB 已生成，训练 10 epoch 产出 2 个 checkpoint。**但无评估脚本 → 无指标/图表 → 论文 §5 填不了**。
+**发现**：BV-aware 少步数优势 (25 步 > Baseline 50 步) ⭐ 可作论文亮点
 
-**核心瓶颈**：缺 `scripts/eval_viz.py`（见 CLAUDE.md §W4 协议）。
+**论文**：§1–§4 全实写，§5 (§7) / §6 (§8) 仍 `\todo`
 
 ---
 
 ## AI 任务清单
 
 ### 已完成
-- [x] 论文 §1 Introduction / §2 Related Work / §3 (§5) Method / §4 (§6) Theory 全实写
-- [x] 5 大定理 LaTeX 证明从 `Docs/proof/` 迁入 `A1_proofs.tex`
-- [x] notation.tex 全部宏落地
-- [x] 代码 MVP 跑通（数据生成 + 训练）
-- [x] REPORT / MEMORY 进度大刷新（2026-04-29）
+- [x] 论文 §1–§4 全实写 + 5 大定理附录
+- [x] BVAwareScore 梯度真值化 + train_bvaware 脚本
+- [x] Sampler Godunov 真梯度 + 梯度裁剪防 NaN
+- [x] eval_viz 多模型/多步数/PDE guidance 支持
+- [x] 服务器 3 线训练跑通 + 综合 eval
 
 ### 待完成（按优先级）
 
-- [ ] **`scripts/eval_viz.py`**（最高优先）—— E1 Burgers 评估 + 可视化 + 指标输出
-- [ ] **`scripts/train_baseline.py`** —— 纯 EDM baseline 训练（用于对比）
-- [ ] **eval_viz 扩展** —— baseline vs ours 三栏对比图
-- [ ] **BVAwareScore 梯度真值化**（`src/models/score_param.py`）
-- [ ] **Sampler Godunov guidance 真梯度**（`src/diffusion/samplers.py`）
-- [ ] §5 (§7) Experiments 实写（依赖 eval 产出数字）
+- [ ] **时间信息 Loss** (轻量版) — dataset 加相邻帧 + loss 加 ‖ûₙ₊₁ - Godunov_step(uₙ)‖²（~30 行改动）
+- [ ] **BVAwareScore 大模型重训** — dim=256, epochs=500, 加时间 loss
+- [ ] **E2 Buckley–Leverett** (本地 PC) — 新 solver + 数据 + 训练 + eval
+- [ ] §5 (§7) Experiments 实写 (等 W₁ 压到 <0.5 后填入)
 - [ ] §6 (§8) Conclusion 实写
-- [ ] 全文 `\todo{}` 清除 + 最终 polish
+- [ ] 全文 `\todo{}` 清除
 
 ### 远期
-- [ ] E1 消融实验（schedule / loss / parameterization）
-- [ ] E2 Buckley–Leverett
+- [ ] 重量版时间 loss (L_Burg: score 层面 Burgers 一致性)
 - [ ] E3 Euler Sod
+- [ ] E4/E5 (rebuttal)
 
 ---
 
 ### 启动时必读
-- `CLAUDE.md §W4 实验代码开发专项协议` — 详细开发指令
+- `CLAUDE.md §W4 实验发现与后续策略` — 少步数 / PDE guidance / E2 规划 / 时间 loss
 - `REPORT.md` — 诚实进度
 - `MEMORY.md` — 决策日志
-- `paper/black/sections/03_method.tex` — 论文方法章节（代码对齐依据）
+- `Docs/path_A_method_skeleton.md` — 论文框架

@@ -274,4 +274,44 @@ grad_u = torch.autograd.grad(loss_pde, u_tau)[0]
 - Commit 原子化：一个子任务一个 commit，message 用 `feat(scripts): ...` 格式
 - 分支命名：`feat/eval-viz-YYYYMMDD` 等
 
+---
+
+## W4 实验发现与后续策略 (2026-04-29 更新)
+
+### 关键实验发现
+
+**1. 少步数优势** ⭐ 可作论文亮点
+- BV-aware 在 25 Heun 步下 W₁=0.719, 优于 baseline 50 步的 0.734
+- **少步数 + BVAwareScore = 超过半数步数 Baseline** — 证明建筑先验减少了对多步去噪的依赖
+- 机制: tanh(φ_sh/2σ²) 硬编码了 interfacial profile, 网络无需多步迭代来"学习" shock 形状
+
+**2. PDE guidance 状态**
+- Godunov 真梯度已实现, 梯度裁剪修复了 NaN
+- 但无条件采样时 PDE guidance 推往 u≡0 (trivial solution), 对 W₁ 无益
+- 正确用途: 条件生成 / 逆问题 (给定观测点, PDE guidance 保证解的物理一致性)
+
+**3. BVAwareScore vs StandardScore**
+- BVAwareScore (7.7M, dim=128, 200ep) 比 StandardScore (0.4M, 50ep) 的 W₁ 仅改善 ~3%
+- 主因: 模型仍未学透 Burgers 分布 → 下一步需 (a)更大模型 (b)时间信息 (c)更多数据
+
+### E2 Buckley–Leverett 规划 (本地开发)
+- 目标: 非凸通量 f(u)=u²/(u²+(1-u)²), 产生 shock + rarefaction 混合波
+- Baseline 中央差分在 rarefaction 处表现更差 — 预期拉开差距
+- 需要: 新 Godunov solver, 新 dataset, 新 config
+- 工程量: 中等 (~200 行新代码 + 1 天训练)
+- 在本地 PC 进行, 不占用服务器
+
+### 时间信息 Loss 路线图
+- **轻量版** (推荐): dataset 返回 (u(tₙ), u(tₙ₊₁)), loss += ‖ûₙ₊₁ - Godunov_step(uₙ)‖²
+  - 改动量: ~30 行 (dataset + loss)
+  - 不改变模型架构
+- **重量版**: L_Burg = ‖∂τ s + 2s·∇u s - Δu s‖²
+  - 需要 score 的 Hessian, 工程量大的数据重构
+  - 留 Phase 3
+
+### 论文写作状态
+- ✅ E1 实验完整闭环 (数据 → 训练 → eval → 出图)
+- ❌ §5 Experiments 仍 todo (等待 BVAwareScore 达到明显差距后填入)
+- ❌ §6 Conclusion 仍 todo
+
 

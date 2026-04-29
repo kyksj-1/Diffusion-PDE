@@ -71,7 +71,7 @@ $$
 ### 2.2 Three Novelty Claims（论文三大原创贡献，intro 一句话版）
 
 1. **Claim 1（结构观察）**：物理 PDE shock 与 diffusion score shock 同址，构成一个耦合的"双 Burgers"系统。
-2. **Claim 2（算法设计）**：据此设计 **entropy-aware noise schedule + BV-aware score parameterization**，使得反向采样在 Wasserstein 距离下一致于 Kruzhkov 熵解。
+2. **Claim 2（算法设计）**：据此设计 **entropy-aware noise schedule + BV-aware score parameterization**，使得反向采样在 Wasserstein 距离下一致于 Kruzhkov 熵解。**实验验证**（2026-04-29）：BV-aware 参数化在 **25 Heun 步**下达到 StandardScore 基线 **50 步**的 W₁ 水平——建筑先验（硬编码 tanh interfacial profile）减少了网络对多步迭代的依赖，是少步数去噪的工程优势。
 3. **Claim 3（理论保证）**：证明所提采样器在 $W_1$ 距离下对带 shock 的 1D 标量守恒律和 1D Euler 方程，具有**去除 $\exp(\Lambda)$ 放大因子**的 $\mathcal{O}(\varepsilon^{1/2})$ 收敛率（$\varepsilon$ 为 score $L^2$ 训练误差）。
 
 ---
@@ -222,14 +222,18 @@ $$
 ## 5. 实验 Benchmark
 
 > **原则**：实验为理论服务。5 个 benchmark 按难度分层，先确保前 2 个有结果，后面做到哪算哪。
+>
+> **E1 当前状态（2026-04-29）**：数据 + StandardScore + BVAwareScore + Baseline 全部跑通。BV-aware 在少步数下有优势（25 步优于 baseline 50 步），但整体 W₁ 仍偏高（~0.7-0.8）。下一步：加时间信息 loss + 更大模型。
 
-| # | PDE | 维度 | 难点 | 对比 Baseline | 关键指标 |
-|---|---|---|---|---|---|
-| E1 | Inviscid Burgers $\partial_t u + \partial_x(u^2/2) = 0$ | 1D | 有限时间 shock | DiffusionPDE（复现）、FNO | $W_1$, $L^1$, shock-location err |
-| E2 | Buckley–Leverett $\partial_t u + \partial_x(u^2/(u^2+(1-u)^2)) = 0$ | 1D | 非凸通量，rarefaction + shock 混合 | DiffusionPDE、WENO5 | $W_1$, $L^1$, TV |
-| E3 | 1D Euler（Sod 激波管） | 1D（3 components） | 3 种波系：shock + contact + rarefaction | 同上 | $W_1$ per component |
-| E4 | 2D Shallow-Water | 2D | Hydraulic jump | FNO、U-Net-diffusion | $W_2$, jump err |
-| E5 (stretch) | 1D Vlasov–Poisson（冷束流不稳定性） | 1D$\times$1D | 弱解、filamentation | Deep Kinetic JKO（[2603.23901]） | 相空间 $W_2$ |
+| # | PDE | 维度 | 难点 | 对比 Baseline | 关键指标 | 状态 |
+|---|---|---|---|---|---|---|
+| E1 | Inviscid Burgers $\partial_t u + \partial_x(u^2/2) = 0$ | 1D | 有限时间 shock | EDM Baseline、FNO | $W_1$, $L^1$, shock-location err | ✅ 闭环，待精进 |
+| E2 | Buckley–Leverett $\partial_t u + \partial_x(u^2/(u^2+(1-u)^2)) = 0$ | 1D | 非凸通量，rarefaction + shock 混合 | EDM Baseline、WENO5 | $W_1$, $L^1$, TV | 📋 计划中 (本地 PC) |
+| E3 | 1D Euler（Sod 激波管） | 1D（3 components） | 3 种波系：shock + contact + rarefaction | 同上 | $W_1$ per component | 远期 |
+| E4 | 2D Shallow-Water | 2D | Hydraulic jump | FNO、U-Net-diffusion | $W_2$, jump err | 远期 |
+| E5 (stretch) | 1D Vlasov–Poisson（冷束流不稳定性） | 1D$\times$1D | 弱解、filamentation | Deep Kinetic JKO（[2603.23901]） | 相空间 $W_2$ | 远期 |
+
+**E2 策略分析**：Buckley-Leverett 的非凸通量 $f(u)=u^2/(u^2+(1-u)^2)$ 产生 shock + rarefaction 混合波。Baseline 的中心差分离散在 rarefaction 波中会产生非物理震荡（而 Godunov flux 天然处理），这是 EntroDiff 预期拉开差距的场景。工程量估计：新 Godunov solver ~100 行 + 数据生成 ~50 行 + 训练 eval 复刻 E1 模式。在本地 PC（RTX 4060）进行，不占用服务器。
 
 **数据生成**：
 - E1/E2/E3：Godunov + WENO5 作为 ground truth
