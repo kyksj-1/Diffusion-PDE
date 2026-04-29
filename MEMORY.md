@@ -27,6 +27,18 @@
 
 ## B · 决策日志（按日期倒序）
 
+### 2026-04-29（W4）· 代码 MVP 跑通 + 进度大刷新
+
+- **任务**：用户运行 `train_mvp.py` 成功。要求对齐 REPORT/MEMORY 到真实进度。
+- **现状核实**：
+  - 代码：8 源文件全实写（非 REPORT 旧称 `raise NotImplementedError`），2 脚本跑通
+  - 数据：`burgers_1d_N5000_Nx128.npy` 246MB，5000 samples，Nx=128
+  - 训练：10 epoch 完成，2 checkpoint 产出
+  - **缺口**：缺 `eval_viz.py`（← 当前瓶颈）；BVAwareScore 梯度用 proxy 非真 autograd；sampler PDE guidance 用直接残差非 ∇L_PDE
+- **REPORT.md 更新**：§1 完成度全面修正（代码 2%→40%，实验 0%→15%）；§2.5 代码区全部重写（列表出 8 模块+2 脚本）；§3.3/§3.4 如实写缺口；§4 最新优先级（eval_viz.py 为首）；§6 新增里程碑
+- **阶段判断**：实际进度 W5–W6 水平，超出 REPORT 旧标 W3
+- **决策**：不调周标，但如实记入 REPORT
+
 ### 2026-04-28（W3）· 论文前三节精修 + 定理附录完整迁入 LaTeX
 
 - **本 session 任务**：用户 5 点指令——(1) 完善 §1/§2/§5 + 定理入附录，(2) NeurIPS 2026 格式，(3) 更新进度文档，(4) 继写 §6 Theory，(5) 已知证明在 `Docs/proof/`。
@@ -108,10 +120,12 @@
 
 ### C.1 当前阶段
 
-- **周次**：W3（12 周时间表的第 3 周；W0–2 已完成）
-- **本阶段主任务**：论文撰写 + 实验启动**双线**
-- **本 session（W3）已完成**：§1/§2 精修；§5 Method 完整实写；§6 Theory proof sketch 全部实写；A1_proofs.tex 附录 5 大定理全部迁入；notation.tex 全部宏落地
-- **下一里程碑**：(i) 用户 review Thm 3 证明完整性；(ii) §7 Experiments 实写；(iii) §8 Conclusion 实写
+- **周次**：W4（12 周时间表的第 4 周；代码实装速度已超前）
+- **本阶段主任务**：论文写作收尾 + **E1 Burgers 实验闭环**
+- **本 session（W4）已完成**：
+  - 用户运行 `train_mvp.py` 成功（数据 246MB / 10 epoch / 2 ckpt）
+  - REPORT/MEMORY 进度大刷新（纠正 2% → 40% 过时信息）
+- **下一里程碑**：写 `eval_viz.py` → 出第一张 Burgers shock 对比图 → 填论文 §5/§7 Experiments 的 `\todo`
 
 ### C.2 已完成（详见 REPORT.md §2）
 
@@ -130,21 +144,26 @@
   - A1_proofs.tex 5 大定理完整 LaTeX 证明（5 子文件 + 主控）
   - §6 Theory 5 段 proof sketch 全部实写
   - REPORT.md / MEMORY.md 全面刷新
+- **W4（2026-04-29）**：
+  - **代码 MVP 全实写并跑通**：8 源文件（UNet1D / StandardScore / BVAwareScore / schedule / loss / sampler / solver / dataset）→ 数据生成（246MB）→ 10 epoch 训练（2 ckpt）
+  - REPORT/MEMORY 进度大刷新
 
 ### C.3 进行中
 
-- 用户 review Thm 3 LaTeX 证明（`proofs/thm3_proof.tex`）← **关键瓶颈**
+- **写 `eval_viz.py`**：加载 checkpoint → Heun 采样 → 与 test split ground truth 对比 → 出 shock 对比图 ← **当前瓶颈**
+- 用户 review Thm 3 LaTeX 证明（`proofs/thm3_proof.tex`）← 理论侧关键瓶颈
 
 ### C.4 阻塞中
 
-- 暂无
+- 无硬阻塞。但有**软缺口**：BVAwareScore 真梯度（当前 proxy）；sampler PDE guidance 真梯度（当前 proxy）
 
-### C.5 下一步（W3/W4 优先级）
+### C.5 下一步（W4 优先级）
 
-1. **Thm 3 最终 review**：用户在 Overleaf 验证 `proofs/thm3_proof.tex` 的 6 阶段证明闭合性
-2. **§7 Experiments 实写**：E1-E3 实验描述 + baseline 方法 + 指标
-3. **§8 Conclusion 实写**：限制 + future work
-4. **全文 `\todo` 清除**：grep 剩余 `\todo`，逐项处理
+1. **写 `scripts/eval_viz.py`**（最高优先）—— 有了它才能出第一张图
+2. **§5/§7 Experiments 实写**（依赖 eval 产出数字）
+3. **§6/§8 Conclusion 实写**
+4. **BVAwareScore + sampler 梯度真值化**（论文忠实度）
+5. **全文 `\todo` 清除**：18 处 → 0
 
 ---
 

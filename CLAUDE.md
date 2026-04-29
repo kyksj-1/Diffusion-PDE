@@ -16,6 +16,7 @@
     - 论文生成类任务，必须严谨专业，高度符号化，并且与论文上下文符号、思路对齐
 - 当你有疑问的时候，可以向我询问进行确认（如 `AskUserQuestion` 工具）。当你有 90% 以上的把握理解我的意图时再开始行动
 - 开始前除了md文档外要扫读关键内容、真实项目进度（很有可能项目先进于当前文档）
+- 注释只能增加，不能减少！！！详细的颗粒度，把关键行的目的都要点出来！
 
 ---
 
@@ -162,40 +163,115 @@ prompt	>	MISSION.md  >  CLAUDE.md  >  MEMORY.md  >  ~/.claude/CLAUDE.md (全局)
 ### 不要做的事（别忘）
 
 - ❌ 本地编译 LaTeX（用户用 Overleaf；CLAUDE.md §LaTeX 编译工作流）
-- ❌ 实装 PROJECT/black/ 下任何核心代码（用户：留给后续 session）
 - ❌ 写新讲义
 - ❌ 自动合并 main
+- ❌ 随意发明新 loss / schedule / 架构，未在论文 §3 (§5) 中描述的一律不写
 
 ### 建议做的事
 
 - ✅ 任何任务遇到大不确定，**停下问用户**（CLAUDE.md "90% 把握再行动"），使用askquestion功能
 - ✅ 用 sub-agent + worktree 并行修订各阶段
 - ✅ 完成后跑 merge dry-run，等用户审批
-- **同步刷新 REPORT.md §2.6 + MEMORY.md**
+- ✅ 同步刷新 REPORT.md + MEMORY.md（二者强制更新）
 
 ---
 
 ## W4 实验代码开发专项协议 (给代码 AI 的指令)
 
-> **当前阶段核心目标**: 依据 `paper/black/sections/03_method.tex` 完成 EntroDiff 的 MVP (最小可行产品) 代码实现与对比实验。
+> **当前阶段核心目标**: E1 Burgers 实验完整闭环——从 "数据+训练 done" 推进到 **"出图+出表+填论文 §5"**。
+>
+> **现状**（2026-04-29）请读 `REPORT.md` → 简版如下：
+> - ✅ 8 核心源文件全实写（UNet1D / StandardScore / BVAwareScore / schedule / loss / sampler / solver / dataset）
+> - ✅ `generate_data.py` 跑通（Burgers 1D, 5000 samples, Nx=128, ~246MB）
+> - ✅ `train_mvp.py` 跑通（10 epoch, 2 ckpt at epoch 5/10, ~7.7MB each）
+> - ❌ **无 eval 脚本** → 无指标 / 无图表 / 论文 §5 `\todo` 填不了
+> - ❌ **无 pure EDM baseline 训练** → 无法出 "EDM vs Ours" 对比图
+> - ❌ **BVAwareScore 梯度 proxy**（真 autograd 未接）
+> - ❌ **Godunov PDE guidance proxy**（直接残差而非 ∇L_PDE）
 
 ### 1. 角色设定
-- **扮演角色**：Zongyi Li (李宗沂，Caltech / NVIDIA，FNO 核心一作)。
-- **扮演理由**：拥有 AI4PDE 领域最顶级的工程落地能力（参考 `neuraloperator` 库），编码风格严谨、数学推导扎实，能够在保障工业级代码规范（如 OOP 设计、多端解耦）的同时，完美复刻前沿数学方程。
+- **扮演角色**：Zongyi Li（李宗沂，Caltech / NVIDIA，FNO 核心一作）。
+- **扮演理由**：拥有 AI4PDE 领域最顶级的工程落地能力（参考 `neuraloperator` 库），编码风格严谨、数学推导扎实，能够在保障工业级代码规范的同时完美复刻前沿数学方程。
 
-### 2. 实验设计与 MVP 思想
-- **任务范围**：锁定 **1D Inviscid Burgers Equation**，出图对比 shock 捕捉能力。
-- **对比基线**：Baseline (纯 EDM $\mathcal{L}_{\mathrm{DSM}}$) vs Ours (MVP版: $\mathcal{L}_{\mathrm{DSM}} + \mathcal{L}_{\mathrm{ent}}$ + Viscosity-matched + Godunov guidance)。
-- **切忌过度工程 (Over-engineering)**：保持代码结构清晰可扩展（`configs/`, `src/`, `scripts/` 分离），但**不要**一上来就写沉重的庞大框架（如复杂的 registry 或冗余的抽象类）。优先跑通最简单的端到端训练与采样。最复杂的 Parameterization C (以 Tanh 拟合冲击波) 作为进阶规划，初期切勿实装以免卡住主干流程。
+### 2. 第一阶段（本 session · 必须完成）—— E1 Burgers 出图闭环
 
-### 3. 环境与硬件约束 (核心痛点)
-- **跨环境平滑迁移**：当前在 PC 端（RTX 4060，算力/显存极度有限）开发测试。代码必须考虑到后续向 Colab / Kaggle / 服务器的无缝迁移。
-- **配置解耦**：严格遵循 `Docs/多环境开发指南_从第一天就做对.md`，务必通过 `configs/env_config.yaml` 集中管理环境，**严禁在代码中写死绝对路径**。
-- **资源限制**：选择轻量级 1D U-Net 作为 Backbone。实验配置（Batch Size、Epoch 等）要分为 `mvp_pc_test` 和 `full_server_run`，PC 端侧重功能打通，控制显存开销不超过 8GB。
+#### 2.1 `scripts/eval_viz.py` — 评估 + 可视化（**最高优先**）
+直接新建文件，不要改已有代码。
 
-### 4. 论文忠实度与外部库复用
-- **理论严格对齐**：动手前必须仔细阅读 `03_method.tex`。Loss 的实现和公式（特别是 $\mathcal{L}_{\mathrm{ent}}$ 和 Godunov flux）必须**在代码注释中给出对应的 LaTeX 公式 / 论文章节号**，逻辑保证一一对应。
-- **不做重复造轮子**：建议直接复用 `diffusers` (如 `UNet1DModel` 魔改)、利用 `PyClaw` 或现成经典开源数值 PDE 求解器生成 Ground Truth 数据方案。
-- **Git 管理**：在工业标准的加持下，保持原子化 commit 和子分支（`feat/mvp-...`）管理，不搞大版本“坨交”。
+**功能要求**：
+1. 加载 epoch 10 checkpoint（`output_dir / mvp_run / entrodiff_mvp_ep10.pt`）
+2. 构建 `StandardScore` 模型 + `ViscosityMatchedSchedule(nu=0.01)`
+3. 从 `BurgersDataset(test)` 取 test split 的 ground truth
+4. 用 `entrodiff_heun_sampler`（已有）跑反向采样生成解
+5. 计算三个指标：**W₁**、**L¹ relative error**、**shock-location error**（shock 位置 = max |grad| 的 x 坐标）
+6. 出图并存 `Output/black/experiments/mvp_run/`：
+   - `e1_shock_comparison.png` — 上：ground truth 线 + 生成线；下：逐点误差
+7. 打印指标摘要到 stdout
+
+#### 2.2 `scripts/train_baseline.py` — 纯 EDM baseline 训练
+**目的**：必须有一个不使用 viscosity-matched schedule 和 BV loss 的纯 EDM 对比线。
+
+**实现方式**：
+- 从 `train_mvp.py` 拷贝框架
+- 将 `ViscosityMatchedSchedule` 换为 `BaselineSchedule`（EDM 标准 log-normal sigma 采样）
+- 将 loss 改为仅 `L_DSM`（删掉 `lambda_bv * L_BV`），保持其他超参对齐（epochs=10, lr=2e-4, batch_size=64）
+- 保存 checkpoint 到 `output_dir / mvp_baseline /`
+
+#### 2.3 eval_viz 扩展——baseline vs ours 对比图
+在 eval_viz.py 中同时加载 baseline ckpt 和 ours ckpt，出三栏对比图：
+- 左：ground truth（test split 某条曲线）
+- 中：EDM baseline 生成
+- 右：EntroDiff 生成
+→ 保存 `e1_baseline_vs_ours.png`
+
+### 3. 第二阶段（可本 session 或下一 session）——梯度真值化
+
+#### 3.1 BVAwareScore 真梯度
+文件 `src/models/score_param.py:55–82`，当前是用 `phi_sm + (kappa/2)*tanh*phi_sh` 的 proxy 加法。
+**正确实现**：
+```python
+x.requires_grad_(True)
+phi_sm = self.phi_sm_net(x, sigma.log()/4.0)
+phi_sh = self.phi_sh_net(x)
+kappa  = self.kappa_net(x) + 1e-4
+tanh_factor = torch.tanh(phi_sh / (2 * sigma**2 + 1e-6))
+
+# 真梯度：必须 create_graph=True，因为 loss 会对 s_theta 再求导
+grad_phi_sm = torch.autograd.grad(phi_sm.sum(), x, create_graph=True)[0]
+grad_phi_sh = torch.autograd.grad(phi_sh.sum(), x, create_graph=True)[0]
+s_theta = grad_phi_sm + (kappa / 2.0) * tanh_factor * grad_phi_sh
+```
+
+#### 3.2 Sampler Godunov guidance 真梯度
+文件 `src/diffusion/samplers.py:38–46`，当前用 `pde_residual(u_tau, dx)` 直接作方向 proxy。
+**正确实现**：
+```python
+loss_pde = pde_residual(u_tau, dx).pow(2).mean()
+grad_u = torch.autograd.grad(loss_pde, u_tau)[0]
+# 用 grad_u 替代 l_pde_t 作为 guidance direction
+```
+
+### 4. 第三阶段（远期）——消融实验 + E2/E3
+- 消融脚本：schedule 消融 / loss term 消融 / parameterization 消融（等 E1 完全闭环后）
+- E2 Buckley–Leverett：新 solver + 数据生成 + 训练
+- E3 Euler Sod：三组分系统
+
+### 5. 环境与硬件约束
+- **PC 端 RTX 4060**（算力/显存有限），所有代码必须在 <8GB 显存下运行
+- **Windows**：`num_workers=0` 避免 multiprocessing 报错
+- **配置解耦**：`configs/env_config.yaml`（不 commit），绝对路径绝不写死
+
+### 6. 论文对齐规则（强制）
+- **所有 Loss / schedule 代码注释必须引用论文公式编号**（如 `Eq. 3.2`、`Algorithm 1 line 5`）
+- `train_mvp.py` 已对齐的注释标准保持不降
+- 不要随意发明新 loss / 新 schedule 未经论文背书
+- 任何架构改动先读 `paper/black/sections/03_method.tex` 确认是否已在论文中描述
+
+### 7. 代码规范（继续）
+- **注释只增不删**，新注释用中文
+- 函数/类用 type hints
+- 执行脚本有细颗粒度注释（行级，不仅函数级）
+- Commit 原子化：一个子任务一个 commit，message 用 `feat(scripts): ...` 格式
+- 分支命名：`feat/eval-viz-YYYYMMDD` 等
 
 

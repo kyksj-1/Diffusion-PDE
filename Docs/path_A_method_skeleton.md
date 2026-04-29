@@ -316,6 +316,5 @@ $$
 
 ## 9. 立即下一步
 
-> 骨架确定。进入讲义阶段。
-> 下一个交付物：**L1 讲义 — 扩散模型与 Fokker-Planck 方程的等价性**（`Docs/lectures/L1_diffusion_fokker_planck.md`）。
-> 完成 L1 后汇报，再进 L2。
+> 骨架确定。进入论文写作阶段
+>
