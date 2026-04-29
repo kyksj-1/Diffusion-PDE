@@ -20,6 +20,7 @@ desktop.ini
 copilot/
 
 # ----- 独立子仓库（由各自 remote 管理，不纳入父仓库追踪）-----
+paper/black/
 PROJECT/black/
 
 # ----- Python（子项目继承用）-----
