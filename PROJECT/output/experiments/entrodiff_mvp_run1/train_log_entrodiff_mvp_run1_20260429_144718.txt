@@ -1,0 +1,19 @@
+# EntroDiff MVP Training Log
+# Time: 20260429_144718
+# Config: D:\A-Nips-Diffussion\PROJECT\black\configs\experiment\mvp_burgers.yaml
+# Device: cuda  Batch: 64  Workers: 4
+# Params: epochs=50 lr=0.0002 nu=1.0 tau_max=1.0 lambda_dsm=1.0 lambda_bv=0.1
+# Data: ..\output\data\burgers_1d_N5000_Nx128.npy
+# Output: ..\output\experiments\entrodiff_mvp_run1
+#
+# epoch  loss_total  loss_dsm  loss_bv
+   1  0.14382261  0.13239179  0.11430816
+   2  0.08377982  0.07497073  0.08809098
+   3  0.06545180  0.05767843  0.07773366
+   4  0.05550535  0.04960502  0.05900333
+   5  0.05338978  0.04799460  0.05395181
+   6  0.04959767  0.04443794  0.05159732
+   7  0.04922986  0.04426048  0.04969380
+   8  0.04850211  0.04368126  0.04820849
+   9  0.04845654  0.04373570  0.04720840
+  10  0.04693906  0.04224169  0.04697374
