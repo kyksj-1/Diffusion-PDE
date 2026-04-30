@@ -152,6 +152,36 @@ $$
 $$
 但 $\mathcal{L}_{\mathrm{PDE}}$ 改为**Godunov 形式的熵一致通量差分**（不是 DiffusionPDE 的直接中心差分）。
 
+### 3.5 Foundation Model: DiT Backbone ⭐（W5 新增）
+
+> **2026-04-30 更新**：UNet → DiT (Diffusion Transformer) 架构升维。与 UNet 的本质区别：
+> - Self-attention 天然捕捉 shock 处的全局信息（卷积感受野受限）
+> - AdaLN 注入 PDE type embedding，同一模型处理多类双曲 PDE
+> - Patch embedding 自适应多分辨率，无需 padding 损耗
+
+**架构**：
+```
+Input: [noisy_u (1) | IC (1) | PDE_token (1)] → 3 channels
+  ↓ Patch Embedding → D-dimensional tokens
+  ↓
+× N_layers DiT Block:
+  AdaLN(time_emb, PDE_emb) → Self-Attention → AdaLN → MLP
+  ↓
+Unpatchify → denoised_u
+```
+
+**多规模配置**（PC 单卡 → H100×6）：
+| 规模 | dim | layers | heads | 参数量 | 硬件 |
+|---|---|---|---|---|---|
+| tiny | 256 | 6 | 4 | ~5M | RTX 4060 (PC) |
+| small | 512 | 8 | 8 | ~30M | RTX 3090×1 |
+| base | 768 | 12 | 12 | ~100M | H100×1 |
+| large | 1024 | 24 | 16 | ~400M | H100×4-6 |
+
+**混合 PDE 训练**：Burgers / Buckley–Leverett / Euler Sod 交替采样，PDE type token 按 sample 区分。Loss 复用现有 L_DSM + L_BV + L_time。零样本+微调接口支持适配新 PDE。
+
+**论文定位**：§5.4 "Transfer across conservation laws" — 证明建筑先验不是 Burgers 特供，而是整个双曲 PDE 类的共性结构。
+
 ---
 
 ## 4. 理论路线图：5 个核心定理

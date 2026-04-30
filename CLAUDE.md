@@ -311,7 +311,84 @@ grad_u = torch.autograd.grad(loss_pde, u_tau)[0]
 
 ### 论文写作状态
 - ✅ E1 实验完整闭环 (数据 → 训练 → eval → 出图)
-- ❌ §5 Experiments 仍 todo (等待 BVAwareScore 达到明显差距后填入)
+- ✅ E2 Buckley-Leverett solver+数据+StandardScore 训练完成
+- ✅ E3 Euler Sod + E4 Shallow-Water solver+数据 代码就绪
+- ❌ §5 Experiments 实写中 (setup+E1 已写, E2/E3 待填入)
 - ❌ §6 Conclusion 仍 todo
+
+---
+
+## W5 Foundation Model 开发协议 (给代码 AI 的指令)
+
+> **当前阶段核心目标**: 构建跨 PDE 的 Foundation Model — 一个模型解决 Burgers / Buckley-Leverett / Euler Sod / Shallow-Water 等多类双曲 PDE，使用 DiT backbone + PDE embedding + mixed-batch 训练。
+
+### 1. 角色设定
+- **扮演角色**：Zongyi Li（李宗沂，Caltech / NVIDIA，FNO/DiT 架构设计）
+- **扮演理由**：AI4PDE 工程落地第一人；DiT 架构设计经验 + 多 PDE 训练范式
+
+### 2. Foundation Model 架构设计
+
+#### 2.1 DiT-1D Backbone（替代 UNet）
+```
+Input: [noisy_u (1) | IC (1) | PDE_type (1)] → 3 channels
+  ↓ Patch Embedding: Nx=256 → 32 patches × 8, linear project → D=512
+  ↓
+× N_layers DiT Block:
+  AdaLN( time_emb | PDE_emb ) → Self-Attention → AdaLN → MLP
+  ↓
+Unpatchify → denoised_u (1 channel)
+```
+
+**组件**：
+- **PDE Token**: 可学习 embedding `(n_pde_types, D)`，类似 ViT class token
+- **AdaLN**: time embedding + PDE embedding 联合调控 scale/shift
+- **Patch Size**: 可配置 (PC=16, 服务器=8, H100=4)
+
+#### 2.2 多规模配置 (PC → H100)
+
+| 规模 | dim | layers | heads | patch | 参数量 | 目标硬件 |
+|---|---|---|---|---|---|---|
+| `tiny` | 256 | 6 | 4 | 16 | ~5M | 单卡 RTX 4060 (PC) |
+| `small` | 512 | 8 | 8 | 8 | ~30M | RTX 3090×1 |
+| `base` | 768 | 12 | 12 | 8 | ~100M | H100×1 |
+| `large` | 1024 | 24 | 16 | 4 | ~400M | H100×4-6 |
+
+**所有规模共享同一代码**，仅通过 YAML 切换。config 示例：
+```yaml
+model:
+  type: "dit"
+  scale: "small"  # tiny | small | base | large
+  dim: 512
+  n_layers: 8
+  n_heads: 8
+  patch_size: 8
+  dropout: 0.1
+```
+
+#### 2.3 混合 PDE 训练
+- 数据加载器轮流采样 Burgers / BL / Euler 的 batch
+- PDE type token 按 sample 注入
+- Loss = L_DSM + λ_BV·L_BV + λ_time·L_time（复用现有 loss）
+- 统一 pad 所有 PDE 到相同 Nx（如 256）
+
+### 3. 开发任务清单（按优先级）
+
+- [ ] `src/models/dit_1d.py` — DiT-1D backbone (PatchEmbed + DiTBlock + AdaLN + Unpatch)
+- [ ] `src/models/foundation_score.py` — FoundationScore wrapper (替代 StandardScore/BVAwareScore, 输出 D_x)
+- [ ] `src/data/mixed_pde_dataset.py` — 混合 PDE 数据加载器 (交替采样 + PDE type 标记)
+- [ ] `scripts/train_foundation.py` — 混合训练脚本 (支持 grad accumulation, mixed precision)
+- [ ] `configs/foundation/` — 多规模配置 (tiny/small/base/large)
+- [ ] `scripts/eval_foundation.py` — 跨 PDE 评估脚本
+- [ ] 微调接口: `--finetune` + `freeze_backbone` 支持零样本适配新 PDE
+
+### 4. 服务器部署计划
+- 当前服务器 (3×RTX 3090): 跑 `small` 规模混合训练
+- H100 到货后: 跑 `base/large` 规模, batch_size=256
+- tmux 管理: 每个实验独立 tmux session
+
+### 5. 论文对齐
+- Foundation model 对应论文 §5.4 "Transfer across conservation laws"
+- DiT 架构选择在 §3.2 中解释为 "modern diffusion backbone replacing UNet"
+- 跨 PDE 泛化能力作为 Claim 2 的实证
 
 

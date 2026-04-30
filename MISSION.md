@@ -1,75 +1,55 @@
 # MISSION · 当前阶段指令
 
-> **即写即用即换**。持续性内容去 `CLAUDE.md`；进度去 `REPORT.md`。
+> **即写即用即换**。持续性内容请去 `CLAUDE.md`；进度请去 `REPORT.md`；状态 / 决策日志请去 `MEMORY.md`。
 
 ---
 
 ## 当前状态（2026-04-30）
 
-**E1 Burgers** 闭环完成，BVAwareScore 200ep 最佳 W₁=0.729。但整体差距仍小（vs baseline 0.734），需要"拉开差距"策略。
+**服务器**：3 GPU 全满 — E2 BVAwareScore + Sharp IC Ours + Sharp IC Baseline 均在 tmux 运行中
 
-**E2 Buckley–Leverett** StandardScore 跑通，Ours W₁=0.163 vs Baseline 0.176。
+**代码（本地）**：
+- E1 Burgers: 完整闭环 (StandardScore / BVAwareScore / Baseline / IC-conditioning / time loss / 少步消融 / 传统 solver baseline)
+- E2 Buckley-Leverett: solver + 数据 + StandardScore + Baseline 完成，BVAwareScore 服务器训练中
+- E3 Euler Sod: solver + 数据生成器就绪
+- E4 Shallow-Water: solver + 数据生成器就绪
+- 所有 1D PDE flux 模块统一接口：`src/pdes/{pde}_solver.py`
 
-**论文** §1–§4 实写，§5 Experiments 待填入美化后的结果。
+**论文**：§5 Experiments 实写中（setup + E1 已写，E2/E3 待填）
 
----
-
-## 拉大差距计划（三线并行）
-
-### 线 1: Sharp IC 数据 + 训练（本地 PC）
-
-| 子任务 | 说明 |
-|---|---|
-| Sharp IC 数据 | ✅ 已生成 `burgers_sharp_N5000_Nx128.npy` (247MB) |
-| 训 StandardScore Ours | 用 sharp 数据训 Ours (epochs=50, nu=1.0, λ_bv=0.1) |
-| 训 Baseline | 同一 config 下仅换 `BaselineSchedule` + λ_bv=0 |
-| Eval 对比 | sharp 数据上 Ours vs Baseline，预期 gap > E1 标准数据 |
-
-**原理**: 更陡 shock → 中心差分残差在 shock 处更大 → baseline 质量退化更严重。Godunov + BV 约束不受影响。
-
-### 线 2: 少步数系统消融（本地 PC，最快）
-
-| 子任务 | 说明 |
-|---|---|
-| 脚本 | ✅ `eval_step_ablation.py` 已有 |
-| 跑消融 | 对 BV-aware 200ep ckpt 和 Baseline ckpt，分别测 10/25/50/100 Heun 步的 W₁ |
-| 出表 | 画 W₁ vs steps 曲线，展示"少步数下 Ours 优势显著扩大" |
-
-**原理**: Baseline 需要多步去噪来隐式"学习"shock 形状；BV-aware 硬编码 tanh interfacial layer，少步也能保持 sharp。
-
-### 线 3: E2 BVAwareScore（服务器）
-
-| 子任务 | 说明 |
-|---|---|
-| 写 config | E2 BL + BVAwareScore 专用配置 |
-| 服务器训练 | BVAwareScore dim=128, epochs=200, nu=1.0, λ_bv=0.1, λ_time=1.0 |
-| Eval 对比 | BVAwareScore vs StandardScore vs Baseline 三栏对比 |
-
-**原理**: 非凸通量下，tanh 建筑先验对 shock 的捕捉 + Godunov 对 rarefaction 的精确处理 = 双重优势。
+**下一阶段**：Foundation Model — 一个 DiT 模型解决全部双曲 PDE
 
 ---
 
-## 待完成清单
+## 当前任务：Foundation Model 开发
 
-### 最高优先（拉大差距）
-- [ ] 在 sharp IC 数据上训 Ours + Baseline + 对比 eval
-- [ ] 少步数系统消融（10/25/50/100 步 × Ours/Baseline 两条线）
-- [ ] E2 BVAwareScore 训练 + 对比 eval
+详见 `CLAUDE.md §W5 Foundation Model 开发协议`
 
-### 其次（论文收尾）
-- [ ] 论文 §5 (§7) Experiments 实写（基于以上结果）
-- [ ] 论文 §6 (§8) Conclusion 实写
-- [ ] 全文 `\todo{}` 清除
+### 核心设计
+- **Backbone**: DiT-1D (Diffusion Transformer)，替代 UNet
+- **输入**: [noisy_u | IC | PDE_type_embedding] 3 channels
+- **Patch embedding**: 自适应多分辨率
+- **训练**: 混合 PDE 数据交替采样
+- **规模**: tiny(single GPU) → small(3090) → base(H100) → large(H100×6)
 
-### 远期
-- [ ] Coarse grid Nx=64 实验
-- [ ] E3 Euler Sod
-- [ ] E4/E5 (rebuttal)
+### 待开发模块
+
+- [ ] `src/models/dit_1d.py` — DiT-1D backbone
+- [ ] `src/models/foundation_score.py` — FoundationScore wrapper
+- [ ] `src/data/mixed_pde_dataset.py` — 混合 PDE 数据加载器
+- [ ] `scripts/train_foundation.py` — 混合训练脚本
+- [ ] `configs/foundation/` — 多规模配置
+- [ ] `scripts/eval_foundation.py` — 跨 PDE 评估
+
+### 服务器 tmux 会话（当前运行中）
+- `e2_bvaware` (GPU1): E2 BVAwareScore 200ep
+- `sharp_ours` (GPU2): Sharp IC BVAwareScore 500ep
+- `sharp_base` (GPU0): Sharp IC StandardScore 500ep
 
 ---
 
-### 启动必读
-- `CLAUDE.md §W4 实验发现与后续策略`
+### 启动时必读
+- `CLAUDE.md §W5 Foundation Model 开发协议` — 架构 + 任务清单
 - `REPORT.md` — 诚实进度
-- `PLAN/E2_buckley_leverett_plan.md` — E2 开发计划
 - `Docs/path_A_method_skeleton.md` — 论文框架
+- 服务器连接: `ssh -p 227 liuyanzhi@202.121.181.105`
