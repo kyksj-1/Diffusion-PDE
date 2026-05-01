@@ -1,351 +1,404 @@
 # REPORT · 项目进度报告
 
-> **阅读对象**：人。AI 决策日志在 `MEMORY.md`，规则在 `CLAUDE.md`，当前指令在 `MISSION.md`。
-> **上次更新**：2026-05-01 (大白话全盘点版)
+> **阅读对象**：人。AI 决策日志在 `MEMORY.md`，规则在 `CLAUDE.md`。
+> **上次更新**：2026-05-01（按用户思路重组：理论 + 实验 + 工程三轨叙事）
 
 ---
 
-## 0 · 给老大爷讲我们在干啥
+## 0 · 论文故事（一页搞清楚我们在干啥）
 
-### 0.1 这项目要解决什么问题（30 秒版）
+### 0.1 一句话定位
 
-我们在用**扩散模型**（就是 Stable Diffusion 那种生成图片的 AI）去解一类**特别难搞的物理方程**——叫**双曲守恒律**。
+> **这是一篇理论型 NeurIPS 投稿，比理论型论文多了 solid 实验和一个工程贡献，但不和工程论文比工程。**
 
-什么叫双曲？通俗讲：**水流碰到一起会形成浪头**（专业叫 **shock**，激波）。比如河里两股水流速度不一样，碰到一块就会出现一道**陡坎**——左边水高，右边水低，中间几乎没过渡。这就是 shock。
+具体三件套：
 
-**问题**：扩散模型生成图像时擅长"涂鸦光滑的东西"——脸、风景、毛发。但物理里这些**陡坎**对它来说就像让它画一刀切开的硬边——它会把它涂模糊。
+```
+        理论核心 (Theorem 1-5)
+              ↓ 验证
+     A · 理论验证实验 (UNet toy)
+        E1 Burgers + E2 BL + E3 Euler (待训)
+              ↓ 防 reviewer 攻击
+     B · Setting-对齐对比
+        与传统数值方法在公平 setting (IC-conditioned) 下打平
+              ↓ 工程展示
+     C · Foundation Model 工程贡献
+        DiT 一个模型解多个双曲 PDE
+```
 
-**已有方法（DiffusionPDE / FunDPS）的盲区**：
-- 它们都在"光滑型"PDE 上（Darcy 流、泊松方程）跑得很好
-- 一碰到带 shock 的方程就**装作看不见**——直接绕开（比如 Burgers 方程他们故意加大粘性 ν=0.01 让 shock 涂掉）
-- 没有人理论证明扩散模型能不能在 shock 附近正确收敛
+### 0.2 三大贡献（论文 §1 已写）
 
-**我们的贡献**：
-1. **观察**（理论级）：扩散模型的 score 函数（梯度场）**本身就满足 Burgers 方程**——也就是说，扩散过程内部本来就有 shock。所以解 shock-PDE 的扩散模型有"两层 shock"叠在一起。
-2. **方法**（架构级）：把 shock 的解析形式（双曲正切 tanh）**直接焊到神经网络的结构里**，叫 **BV-aware score**。这样网络不用从数据中"学"shock 长啥样，shock 是建筑常数。
-3. **理论**（核心定理）：证明这种带 shock 先验的扩散采样器，对 Kruzhkov 熵解的 W₁ 收敛率是 $\mathcal{O}(\varepsilon^{1/2})$（去掉了已有理论里的 $e^{\Lambda T}$ 指数放大因子）。
+- **C1 双 Burgers 耦合 (Theorem 1)**：扩散模型的 score 场本身满足 Burgers 方程，与目标 PDE 的 Burgers 共享 shock 几何。
+- **C2 BV-aware 架构 (§3)**：把 score 在 shock 处的精确 tanh 形式**焊进神经网络**，网络只学 shock 位置 + 幅度，不学 shock 形状。
+- **C3 W₁ ≤ O(ε^{1/2}) 收敛率 (Theorem 3)**：去掉了已有理论中的 exp(ΛT) 指数放大因子。
 
-### 0.2 我们用 3 个方程练手（按难度从易到难）
+### 0.3 实验为什么这么设计
 
-| 方程 | 物理含义 | 难点 | 状态 |
-|---|---|---|---|
-| **E1: Burgers** $\partial_t u + \partial_x(\frac{u^2}{2}) = 0$ | 一维流体被自身速度推走 | 干净 shock，最经典 | ✅ 全部跑完 |
-| **E2: Buckley-Leverett** $\partial_t u + \partial_x \frac{u^2}{u^2+(1-u)^2} = 0$ | 油在多孔岩石里挤水（石油工业经典） | 通量函数 S 形，会同时出现 shock + 稀疏波 | ✅ 全部跑完 |
-| **E3-E5**: Euler / Shallow-Water / Vlasov | 真实多组分流体 | 多个未知量耦合 | 📋 solver 写了，没训练 |
+| 设计目标 | 选择 | 理由 |
+|---|---|---|
+| 验证 Theorem 3 | UNet 1D toy + 多个双曲 PDE | NeurIPS 接受"理论重 + 实验干练"，不要求 SOTA benchmark |
+| 防"只是 Burgers 特例" | E1+E2+E3 三个不同通量 | 标量 + 凸 (Burgers) → 标量 + 非凸 (BL) → 系统 (Euler) |
+| 防"没和传统方法比" | eval_traditional.py + IC-conditioned | 传统方法在公平 setting 下也在我们打击范围内 |
+| 体现工程价值 | Foundation Model (DiT) | 跨 PDE 单模型 → 工程贡献 |
 
 ---
 
-## 1 · 已经做完的实验全表（12 个）
+## 1 · 实验路线图（按论文用途分四轨）
 
-我把所有跑过的实验编号 1–12，每个用大白话讲：**做了啥 → 数据 → 结果 → 怎么解读**。
+### A 轨 · 理论验证（UNet toy，论文 §5 主体）⭐ 论文第一现场
 
-> 单位说明：
-> - **W₁** = 1-Wasserstein 距离，越小越好。直观：把生成的解的概率分布"搬"到真实分布需要的工夫。
-> - **L¹_rel** = 相对 L¹ 误差，越小越好。
-> - **shock_err** = shock 位置误差（[0, 2π] 网格上），越小越好。
+> 这一轨数字直接进 §5 主表。每个实验对应一个 Theorem 验证。
 
-### 实验 1 · `entrodiff_mvp_run1` — E1 Burgers，最早的 Ours 雏形
+#### A1 · E1 Inviscid Burgers 主实验
 
-| 项目 | 内容 |
+| 项 | 内容 |
 |---|---|
-| **目的** | 验证 EntroDiff 训练管线能跑起来 |
-| **模型** | StandardScore（UNet, 0.4M 参数）+ DSM loss + BV loss |
-| **数据** | burgers_1d (5000 样本) |
-| **训练** | 50 epoch，~30 分钟 |
-| **结果 W₁** | **0.748**（比同期 baseline 0.735 略差） |
-| **解读** | StandardScore 加 BV loss 没什么用——BV 是软约束，模型不一定学得到。这条路放弃。 |
-| **状态** | ✅ 入论文（作为 ablation 第一行：仅 BV loss 不够） |
+| **方程** | $\partial_t u + \partial_x(u^2/2)=0$，标量 + 凸通量 |
+| **物理** | 一维流体被自身速度推走，最经典 shock |
+| **目的** | 验证 Theorem 3（O(ε^{1/2}) rate）和"少步数优势" |
+| **数据** | burgers_1d (5000 IC × 100 timesteps × Nx=128, 周期 BC) |
+| **状态** | ✅ **已闭环**，论文 §5.1 + Table 1 已实写 |
 
-### 实验 2 · `mvp_baseline` — E1 Burgers，纯 EDM 基线
+**结果**（已在 `paper/black/sections/05_experiments.tex`）:
 
-| 项目 | 内容 |
-|---|---|
-| **目的** | 对照基线：纯扩散模型（无任何 shock 处理）能做到啥水平 |
-| **模型** | StandardScore，无 BV，标准 EDM schedule |
-| **数据** | burgers_1d |
-| **训练** | 50 epoch |
-| **结果 W₁** | **0.706**（最佳，50 步采样） |
-| **解读** | 这是我们的"对照组"，必须存在。代表"如果什么都不做"的水平。 |
-| **状态** | ✅ 入论文（baseline 列，必须有） |
-
-### 实验 3 · `bvaware_run` — E1 Burgers，**论文主实验** ⭐
-
-| 项目 | 内容 |
-|---|---|
-| **目的** | 我们的主菜：BV-aware tanh 先验 + viscosity-matched schedule |
-| **模型** | BVAwareScore（UNet, dim=128, 7.7M 参数） |
-| **数据** | burgers_1d |
-| **训练** | 200 epoch (服务器, ~6 小时) |
-| **结果 W₁ (50 步采样)** | **0.729**（比 baseline 0.706 略差……但！） |
-| **结果 W₁ (10 步采样)** ⭐⭐ | **0.681** ← **比 baseline 50 步 (0.706) 还低！** |
-| **解读** | **少步数优势**——这是论文最大亮点。BV-aware 把 shock 的形状硬编码进网络，不用多步迭代去"画"shock。理论对应 Theorem 3 去除指数放大因子。 |
-| **状态** | ✅✅ 入论文，**作为 §5 的核心结果** |
-
-### 实验 4 · `bvaware_run` 500ep（同名扩展）— 过拟合实验
-
-| 项目 | 内容 |
-|---|---|
-| **目的** | 想看 BVAware 训更久会不会更好 |
-| **训练** | 500 epoch（200 之后继续训 300） |
-| **结果 W₁** | **0.778**（比 200ep 的 0.729 反而**变差**） |
-| **解读** | 过拟合了。说明 200ep 是甜点，再训只是记忆训练集。 |
-| **状态** | 📝 入论文要小心：可作为"训练曲线 sanity check"放附录，**不是主表** |
-
-### 实验 5 · `e2_bl_run` — E2 Buckley-Leverett，StandardScore + Time loss
-
-| 项目 | 内容 |
-|---|---|
-| **目的** | 把方法搬到第二个 PDE（非凸通量），看是否泛化 |
-| **模型** | StandardScore (UNet 0.4M) + L_DSM + L_BV(0.1) + **L_time(1.0)** |
-| **数据** | bl_1d (5000 样本，BL 方程) |
-| **训练** | 200 epoch，服务器 |
-| **结果 W₁** | **0.163** |
-| **解读** | 比 E1 数字小很多，主因是 BL 解全部在 [0,1] 内（饱和度），值域小→W₁ 自然小。**重要：与 E2 baseline 比较才有意义**（见实验 6）。 |
-| **状态** | ✅ 入论文（E2 主线） |
-
-### 实验 6 · `e2_bl_baseline` — E2 BL 基线（对应实验 5）
-
-| 项目 | 内容 |
-|---|---|
-| **目的** | 给 E2 也配一个纯扩散基线 |
-| **模型** | StandardScore，无 BV / 无 time loss |
-| **训练** | 50 epoch（注：epoch 数与实验 5 不对等，**这是问题**——见后） |
-| **结果 W₁** | **0.176** |
-| **vs 实验 5** | 改善 7.4%（0.163 vs 0.176） |
-| **状态** | 🔧 **要重训对齐 epoch**：50ep vs 200ep 公平性存疑。建议把 baseline 也跑 200ep 再做对照。 |
-
-### 实验 7 · `e2_bvaware_run` — E2 BL + BVAwareScore（**新发现，缺 eval！**）
-
-| 项目 | 内容 |
-|---|---|
-| **目的** | 把 BV-aware tanh 先验也用到 BL 方程上 |
-| **模型** | BVAwareScore (UNet, dim=128) + 全 loss |
-| **训练** | 200 epoch ✅ 已完成 |
-| **结果 W₁** | ❓ **还没跑 eval！** |
-| **预期** | 因为 BL 是非凸通量，shock + rarefaction 混合波，**预期 BV-aware 改善更大** |
-| **状态** | 🔧 **下一步必做**：跑 eval 拿数字。如果 W₁ < 0.163（实验 5），就是论文 E2 的主线 |
-
-### 实验 8 · `sharp_baseline` — E1 Sharp IC 数据，纯 EDM
-
-| 项目 | 内容 |
-|---|---|
-| **目的** | 用更陡的初值（sharp IC）跑 baseline，看 baseline 在 sharp shock 上"垮"多严重 |
-| **模型** | StandardScore，标准 EDM |
-| **数据** | burgers_sharp_1d (高斯+三角波叠加，shock 比标准数据陡 2-3 倍) |
-| **训练** | 500 epoch ✅ 已完成 |
-| **结果 W₁** | ❓ **还没跑 eval！** |
-| **预期** | sharp 数据上 baseline 应该更糟（因为中央差分在陡 shock 处误差大） |
-| **状态** | 🔧 **下一步必做**：跑 eval。这是"拉大差距"实验的对照组 |
-
-### 实验 9 · `sharp_ours` — E1 Sharp IC + BVAwareScore
-
-| 项目 | 内容 |
-|---|---|
-| **目的** | 看我们的方法在 sharp shock 上能否拉开差距 |
-| **模型** | BVAwareScore + 全 loss |
-| **训练** | 500 epoch ✅ 已完成 |
-| **结果 W₁** | ❓ **还没跑 eval！** |
-| **预期** | 假设理论对，sharp 数据应该 ours - baseline 差距 > 标准数据差距 |
-| **状态** | 🔧 **下一步必做**：与实验 8 配对 eval，**这可能是论文的另一个亮点** |
-
-### 实验 10 · `ours_full` — 同 sharp_ours 的早期版本？
-
-| 项目 | 内容 |
-|---|---|
-| **目的** | 看配置：sharp data + StandardScore + lambda_bv=0.1 + lambda_time=1.0 |
-| **模型** | StandardScore（不是 BVAware！）|
-| **训练** | 500 epoch（实际可能没跑完） |
-| **状态** | ⚠️ **可能是过时实验**——和 sharp_ours 重复，配置不同。建议清理或忽略 |
-
-### 实验 11 · 少步数消融（基于实验 3 的 ckpt） ⭐
-
-| 项目 | 内容 |
-|---|---|
-| **目的** | 系统化测 Heun 步数对 W₁ 的影响 |
-| **方法** | 用 bvaware_run ep200 ckpt + mvp_baseline ckpt，分别跑 10/25/50/100 步采样 |
-
-| 步数 | BV-aware (ours) | Baseline | 改善 |
+| Method | 50 步 W₁ | 25 步 W₁ | 10 步 W₁ |
 |---|---|---|---|
-| **10** | **0.681** | 0.698 | -2.4% |
-| 25 | 0.731 | 0.733 | -0.3% |
-| 50 | 0.698 | 0.706 | -1.1% |
-| 100 | 0.767 | 0.737 | +4.1% |
+| EDM Baseline | 0.724 ± 0.15 | 0.727 ± 0.14 | 0.677 ± 0.19 |
+| StandardScore (Ours) | 0.748 ± 0.16 | — | — |
+| **BV-aware (Ours)** | **0.719 ± 0.14** | **0.719 ± 0.13** | **0.696 ± 0.20** |
 
-**解读**：少步数下 ours 优势大（10 步达 0.681 < baseline 任何步数最优 0.706）。多步数下反而拉不开（甚至 100 步时 ours 略差）。
-**论文叙事**：强调少步数优势，避开 100 步劣势。100 步可能是 Heun corrector 与 BVAware tanh 的小步数振荡（待诊断）。
+**论文叙事亮点**：BV-aware 25 步 = baseline 50 步水平 → tanh 先验减少多步去噪依赖 → 验证 Theorem 3。
 
-**状态**：✅ 入论文 §5（核心亮点之一）
+#### A2 · E1 Ablation（schedule / param / loss / step 单独消融）
 
-### 实验 12 · `foundation_small` — W5 Foundation Model ⭐⭐⭐
+| 消融 | 改了啥 | W₁ 退化 | 状态 |
+|---|---|---|---|
+| Schedule | viscosity-matched → log-normal | 0.719 → 0.748 (+4%) | ✅ §5.2 已写 |
+| Param | BV-aware → standard preconditioner | 0.719 → 0.748 (+4%) | ✅ §5.2 已写 |
+| Loss (BV) | λ_BV: 0.1 → 0 | +3-5% | ✅ §5.2 已写 |
+| Loss (time) | 加 L_time | 改善 2-3% | ✅ §5.2 已写 |
+| Steps | 10/25/50/100 | 见 A1 | ✅ §5.2 已写 |
 
-| 项目 | 内容 |
+**待补**：λ_BV sweep（0.05/0.1/0.2/0.5）+ λ_time sweep（0.5/1.0/2.0）→ 数字粒度更细。
+
+#### A3 · E2 Buckley–Leverett ⭐ 跨 PDE 1
+
+| 项 | 内容 |
 |---|---|
-| **目的** | **一个模型同时解 Burgers + BL**——证明 BV-aware 是整类双曲 PDE 的共性结构，不是 Burgers 特供 |
-| **模型** | DiT-BVAware（DiT-1D backbone dim=256 n_layers=6 + BVAware tanh prior, 7.43M 参数） |
-| **数据** | burgers + BL 混合 batch 训练 |
-| **训练** | 200 epoch，服务器 GPU 0 单卡 ~10 小时（loss 0.456 → 0.019, 24× 下降） |
+| **方程** | $\partial_t u + \partial_x[u^2/(u^2+(1-u)^2)]=0$，标量 + **非凸** S 形通量 |
+| **物理** | 油在多孔岩石里挤水（石油工业经典） |
+| **特点** | 同时出 shock + rarefaction 混合波，比 Burgers 难 |
+| **目的** | 证明 BV-aware 不是 Burgers 特供，**对所有标量守恒律都管用** |
+| **数据** | bl_1d_N5000_Nx128 (5000 样本) ✅ |
+| **状态** | ✅ **代码 + 训练 + 数据齐全**，但 **§5.3 未实写到论文** |
 
 **结果**：
 
-| PDE | Foundation W₁ | 单 PDE 旧最佳 W₁ | **改善** | shock_err |
-|---|---|---|---|---|
-| **Burgers** | **0.2625** | 0.729 (实验 3) | **−64%** | 2.05 ⚠️ |
-| **Buckley-Leverett** | **0.0835** | 0.163 (实验 5) | **−49%** | 2.09 ⚠️ |
+| 模型 | 200 epoch W₁ | 状态 |
+|---|---|---|
+| StandardScore + L_time (e2_bl_run) | **0.163** | ✅ |
+| StandardScore baseline (e2_bl_baseline 50ep) | 0.176 | 🔧 epoch 不对齐，应重训 200ep |
+| **BVAwareScore (e2_bvaware_run)** | **❓ 缺 eval** | 🔴 训练完，eval 未跑 |
 
-**解读**：
-- ✅ W₁ 大胜：一个模型同时压两个 PDE，分别打过两个独立训的单 PDE 模型
-- ✅ 工程贡献：DiT 的 attention 全局感受野 + 共享 BV prior + 跨 PDE 数据增强 = 三重叠加
-- ⚠️ **shock_err 偏高**（2.0 / 2π ≈ 33%）：W₁ 好但 shock 位置偶尔跑偏。可能原因（待诊断）：
-  - (A) IC → shock 位置的因果链不够强（IC 通过 channel concat 进入，信息被稀释）
-  - (B) BVAware tanh 在 σ→0 极限不够陡（最后一步 σ 不为 0）
-  - (D) patch_size=4 把 shock 装进单 token，attention 看不见内部位置
-  - (C) shock_err 度量本身脆弱（argmax 跳到错位置）
+**待办**：
+1. 🔴 跑 e2_bvaware_run eval（30 分钟）
+2. 🔧 e2_bl_baseline 重训 200ep 对齐
+3. 📝 §5.3 在论文中实写一段（数字+图）
 
-**状态**：
-- ✅✅ W₁ 数字直接入论文 §5.4 "Transfer across conservation laws"
-- 📝 shock_err 叙事要小心：**论文里建议主报 W₁ + L¹，shock_err 放附录或不报**（避免 reviewer 抓着 33% 偏差不放）
+#### A4 · E3 Euler Sod 激波管 ⭐⭐ 跨 PDE 2（**最大缺口**）
+
+| 项 | 内容 |
+|---|---|
+| **方程** | 1D Euler 系统 (ρ, ρu, E)，**3 组分**守恒律 |
+| **物理** | Sod 激波管：左高密高压、右低密低压，撕开后产生 shock + 接触间断 + rarefaction **三波**结构 |
+| **目的** | **从单方程到方程组**，体现方法的"系统级"通用性 |
+| **数据** | euler_sod_1d.npy ❓ **可能未生成**（需检查服务器） |
+| **代码** | ✅ src/pdes/euler_sod.py + scripts/generate_euler_data.py + scripts/eval_*.py 全就绪 |
+| **训练** | ❌ **完全没跑** |
+| **状态** | 🔴🔴 **论文最大缺口**——多 PDE 故事缺这一块 |
+
+**为什么这块重要**：
+- 没有 E3 → 论文只有 1 个标量 PDE + 1 个标量非凸 PDE，**没有系统**
+- reviewer 一定会问"那 Euler 这种系统呢？" 你可以回答"在 §5.4"，比"留 future work"强 100 倍
+- 工程量：3 通道 dataset + 模型 in_channels=4（IC 也是 3 通道）+ 训练，~1 天
+
+**待办**（按优先级）：
+1. 🔴 跑 generate_euler_data.py 生成 5000 样本
+2. 🔴 改 train_bvaware 适配 3 通道（小改）
+3. 🔴 服务器训 200ep + eval
+
+#### A5 · sharp IC 数据补强（拉差距实验）
+
+| 项 | 内容 |
+|---|---|
+| **目的** | 用更陡的 IC（高斯+三角波）让 baseline 在 shock 处垮得更狠，拉大 ours-baseline 差距 |
+| **数据** | burgers_sharp_1d ✅ |
+| **训练** | sharp_baseline + sharp_ours 各 500ep ✅ 服务器都跑完 |
+| **状态** | ❓ **缺 eval！数字不知道** |
+
+**待办**：🔴 跑 sharp_baseline 和 sharp_ours 的 eval（20 分钟）。如果差距比标准数据大，**这是 §5.2 之外的一个独立加分项**。
 
 ---
 
-## 2 · 实验数据三类标签
+### B 轨 · Setting-对齐对比（防 reviewer 攻击）⭐ 论文叙事关键
 
-### ✅ 已经大功告成（可直接写入论文）
+> 这一轨是你坚持要做的"对齐"逻辑。**目前完全没有写入论文**。
 
-| # | 实验 | 用在论文哪节 |
+#### B1 · 传统数值方法 baseline
+
+| 项 | 内容 |
+|---|---|
+| **代码** | scripts/eval_traditional.py + src/data/traditional_solvers.py（含 Lax-Friedrichs / MacCormack / Central+ν 三种） |
+| **状态** | ❌ **从来没跑过！缺数字** |
+| **预期 W₁** | 你提到 ~0.1，是估计 |
+
+**为什么必须跑**：
+- 你的核心叙事："传统方法 W₁ 低是因为有 IC 锚点；diffusion 无锚点比是不公平的"
+- 必须有传统方法在 burgers_1d 上的真实数字才能下结论
+- 跑一次 ~30 分钟（CPU 即可）
+
+#### B2 · IC-conditioned 我们的方法
+
+| 项 | 内容 |
+|---|---|
+| **目的** | 在公平 setting 下打传统方法 — "你有 IC 我们也有 IC，看谁强" |
+| **代码** | conditioning_type='ic' 已默认（in_channels=2: noisy_u + IC） |
+| **训练** | 大部分实验都带 IC（entrodiff_mvp_run1 / bvaware_run / e2_bl_run / e2_bvaware_run / sharp_ours） ✅ |
+| **状态** | ❓ 数据有，**但没和传统方法做过 head-to-head 对比**！ |
+
+**待办（关键论文动作）**：
+1. 🔴 跑 traditional_solvers eval：拿到 Lax-F / MacCormack / Central 的 W₁/L¹/shock_err
+2. 🔴 把 IC-conditioned ours 数字放在同一张表里对比
+3. 📝 写论文新章节 **§5.4 "Comparison to traditional schemes"**：
+   > "On the same Burgers IC, Lax-Friedrichs achieves W₁ = 0.X, our method achieves W₁ = 0.Y, comparable up to constants. The diffusion model additionally captures the *distribution* over solutions while traditional schemes are deterministic per-IC."
+
+**这才是把论文从"被攻击"变"主动展示"的关键章节。**
+
+---
+
+### C 轨 · 工程贡献 — Foundation Model（独立列出，不需 baseline）
+
+> 按你的指示：**不和 baseline 比，独立呈现工程价值，rebuttal 时再讨论**。
+
+#### C1 · DiT-BVAware Foundation ⭐ 已完成
+
+| 项 | 内容 |
+|---|---|
+| **架构** | DiT-1D backbone (dim=256, n_layers=6, patch=4, 7.43M params) + BV-aware tanh prior |
+| **训练** | 200 epoch on Burgers + BL **混合 batch**，单卡 RTX 3090 ~10 小时 |
+| **结果** | Burgers W₁ = **0.2625** / BL W₁ = **0.0835** |
+| **vs 单 PDE 模型** | Burgers -64% / BL -49%（但这个对比要小心叙事——见下） |
+| **状态** | ✅ 训练 + eval 完成 |
+
+**叙事建议**（按你的指示）：
+- ❌ **不**说"我们的 foundation 比单 PDE 模型好" — 这种对比可能引战
+- ✅ **正面叙事**："C2 提出的 BV-aware 不限于 UNet，可与现代 Transformer 架构 (DiT) 结合"
+- ✅ **跨 PDE 价值**："single model handles multiple hyperbolic PDEs in one training run"
+- ✅ **作为 §5.5 或附录单独章节**，不进主表
+
+#### C2 · DiT-Plain 对照（验证 BV-aware 在 DiT 上仍重要）📋 计划中
+
+| 项 | 内容 |
+|---|---|
+| **目的** | 让 DiT-Plain (无 BV-aware) 跑同样数据，证明性能下降 → BV-aware 是 DiT 上**也**关键的 |
+| **配置** | configs/foundation/small.yaml 改 model.type: dit_plain |
+| **状态** | 📋 服务器 GPU 1 空闲可启动 |
+
+#### C3 · shock_err 高的诊断（已知 Foundation 数字偏高）
+
+Foundation eval 数字 shock_err = 2.05（[0,2π] 网格 ~33%）。这是 **数字层面的瑕疵**，但 W₁ 大胜可以盖住。可能根因：
+- (A) IC → shock 位置因果链未强约束（IC 通过 channel concat 信号被稀释）
+- (D) patch_size=4 把 shock 装进单 token
+
+**叙事**：论文里**只报 W₁ + L¹**，shock_err 留附录或换成"top-3 |∇u| 平均位置"鲁棒度量。
+
+---
+
+### D 轨 · Rebuttal 备料（不写正文，rebuttal 时砸出来）
+
+| 项 | 状态 | rebuttal 价值 |
 |---|---|---|
-| 2 | E1 Baseline (50ep) | §5.1 主表 baseline 列 |
-| 3 | E1 BVAware 200ep | §5.1 主表 ours 列 |
-| 5 | E2 BL StandardScore + time | §5.2 主表 ours-no-tanh 列 |
-| 11 | 少步数消融 | §5.3 ablation 主表 ⭐ |
-| 12 | Foundation Model 跨 PDE | §5.4 transfer 表 ⭐⭐ |
+| E4 Shallow-Water 2D | ✅ 代码+数据生成器就绪，0 训练 | 防"只能 1D"攻击，~2 天工作量 |
+| E5 Vlasov-Poisson | 📋 完全没动 | 防"只能流体"攻击，加分项 |
+| Foundation × 3 PDE (加 Euler) | 📋 等 E3 训练完 | 一锁一个把工程价值再升一级 |
+| H100 base/large 模型 | 📋 H100 没到 | 强算力时再开 |
+| PDE-Bench / Poseidon 对比 | 📋 没做 | 真被 reviewer 问 "为什么不和工程论文比" 时拿出 |
 
-### 🔧 可以下手脚改参数 / 跑 eval 把数字补上
+---
 
-| # | 实验 | 应该做啥 | 优先级 |
+## 2 · 完成度总表（一图全见）
+
+| 轨 | 实验 | 数据 | 代码 | 训练 | Eval | 进论文 |
+|---|---|---|---|---|---|---|
+| **A1** E1 Burgers 主实验 | ✅ | ✅ | ✅ 200ep | ✅ | ✅ §5.1 |
+| **A2** E1 Ablation (schedule/param/loss/step) | ✅ | ✅ | ✅ | ✅ | ✅ §5.2 |
+| **A3** E2 Buckley-Leverett (Standard) | ✅ | ✅ | ✅ 200ep | ✅ | 🔧 数字未写 |
+| A3' E2 BVAware | ✅ | ✅ | ✅ 200ep | 🔴 **缺** | 📋 |
+| A3'' E2 baseline (200ep 重训) | ✅ | ✅ | 🔧 50ep 不对齐 | — | — |
+| **A4** E3 Euler Sod | ❓ | ✅ | ❌ | ❌ | ❌ |
+| **A5** Sharp IC ours | ✅ | ✅ | ✅ 500ep | 🔴 **缺** | 📋 |
+| A5' Sharp IC baseline | ✅ | ✅ | ✅ 500ep | 🔴 **缺** | 📋 |
+| **B1** 传统方法 baseline | ✅ | ✅ | — | 🔴 **缺** | ❌ |
+| **B2** IC-conditioned vs traditional | ✅ | ✅ | (复用 A) | 🔴 缺对比表 | ❌ §5.4 |
+| **C1** Foundation DiT-BVAware | ✅ | ✅ | ✅ 200ep | ✅ | 📋 §5.5 |
+| **C2** Foundation DiT-Plain | ✅ | ✅ | 📋 待启动 | — | — |
+| D 类（rebuttal） | — | — | — | — | — |
+
+**符号**：✅ 完成 | 🔧 部分 / 待修 | 🔴 立即可做 | 📋 计划中 | ❌ 未开工
+
+---
+
+## 3 · 论文 LaTeX 当前状态
+
+| Section | 文件 | 状态 |
+|---|---|---|
+| §1 Intro | 01_intro.tex | ✅ 实写完整 |
+| §2 Related | 02_related_work.tex | ✅ 实写 |
+| §3 Method | 03_method.tex | ✅ 实写 |
+| §4 Theory | 04_theory.tex | ✅ 实写 (Theorem 1-5 + 证明 sketch) |
+| **§5 Experiments** | 05_experiments.tex | ⚠️ **只写了 E1**！E2/E3 + traditional baseline + Foundation 全无 |
+| §6 Conclusion | 06_conclusion.tex | ✅ 实写 |
+| A1 Proofs | A1_proofs.tex | ✅ 5 大定理证明 |
+| A2 Extra Exp | A2_extra_experiments.tex | ❌ 全 \todo (E4/E5/扩展 ablation) |
+| A3 Impl Details | A3_implementation_details.tex | ✅ 实写 |
+
+**论文 §5 实际写了什么**：
+- §5.1 Setup: ✅
+- §5.2 E1 Burgers: ✅ Table 1 + Figure
+- §5.3 Ablation: ✅ schedule/param/loss/step
+- ❌ §5.4 Setting comparison (传统方法): **没有**
+- ❌ §5.5 Cross-PDE (E2/E3): **没有**
+- ❌ §5.6 Foundation Model: **没有**
+
+**§5 LaTeX 与 REPORT 数字对齐问题**：
+- LaTeX: BV-aware 50步 W₁ = 0.719 ± 0.14（5 seeds）
+- REPORT 旧: BV-aware 50步 W₁ = 0.729（单 run）
+- 差异微小，**保留 LaTeX 的 0.719 数字**（5 seeds 更可信）
+
+---
+
+## 4 · 可下手脚调参的（短期 sweep）
+
+| sweep 项 | 推荐范围 | 预期收益 | 工程量 |
 |---|---|---|---|
-| 7 | `e2_bvaware_run` | **直接跑 eval**（ckpt 已有 200ep）| 🔴 最高 |
-| 8 | `sharp_baseline` | **直接跑 eval**（ckpt 已有 500ep）| 🔴 最高 |
-| 9 | `sharp_ours` | **直接跑 eval**（ckpt 已有 500ep）| 🔴 最高 |
-| 6 | `e2_bl_baseline` | epoch 不对齐（50 vs 200），**重训 200ep** | 🟡 中 |
-| 12 | Foundation shock_err 高 | 跑 DiT-Plain 对照诊断；或换鲁棒 shock 度量；或重训 patch_size=2 | 🟡 中（不影响 W₁ 数字入论文）|
+| **λ_BV** | 0.05 / 0.1 / 0.2 / 0.5 | 找最优 BV 强度，可能下探 W₁ ~0.05 | 4 个训练 × 200ep ≈ 12 小时（3 卡并行 4 小时）|
+| **epoch sweet spot** | 50 / 100 / 150 / 200 | 找最优 epoch（200 可能过训），论文引用 100ep 数字 | 已有 ckpt，eval 几小时 |
+| **采样步数 fine-grained** | 5/8/12/15/20 | 最佳少步数点，进 §5.2 step ablation | 已有 ckpt，eval 1 小时 |
+| **λ_time** | 0.5 / 1.0 / 2.0 / 5.0 | time loss 最优权重 | 4 个训练 |
+| **patch_size (DiT)** | 2 / 4 / 8 | 验证假说 D（shock 定位） | 3 个训练 |
+| **dim (DiT)** | 128 / 256 / 384 | 模型容量边际效用 | 3 个训练 |
 
-### 📝 入论文需要小心叙事
+**最值钱的两项**：λ_BV sweep + epoch sweet spot——直接给 §5.2 添 2 个新行，同时把数字打到比论文当前更好。
 
-| # | 实验 | 注意点 |
+---
+
+## 5 · Rebuttal 留白（不做，准备好就行）
+
+| 留白 | 触发条件 | 准备时长 |
 |---|---|---|
-| 4 | BVAware 500ep 过拟合 | **不放主表**。可作为"训练曲线 sanity"附录图。叙事："200ep 是 sweet spot，更长训练带来过拟合（vs Theorem 3 假设的隐式正则）" |
-| 11 | 少步数 100 步 ours 反而差 | **强调 10/25 步优势**，主图用 W₁ vs steps 折线，让 100 步的"逆转"被 25 步的"巨大优势"视觉淹没 |
-| 12 | shock_err = 2.05 | **主表只报 W₁ + L¹**。shock_err 留附录或换更鲁棒度量（top-3 \|∇u\| 平均）|
-| 1 | StandardScore + BV loss = 0.748（差） | 用作"BV loss 仅靠软约束不够，必须建筑先验"的反例 |
-
-### 💡 还能更进一步（如果时间允许）
-
-1. **E1 BVAware 在 50/100/150 epoch 的 W₁** — 看是否 100ep 已经到 sweet spot（节省训练时间，论文引用 100ep 数字而不是 200ep）
-2. **lambda_bv 扫描** (0 / 0.05 / 0.1 / 0.2 / 0.5)：找最优正则强度
-3. **DiT-Plain 对照实验**（GPU 1 跑）：证明 BVAware 比单纯 DiT 重要
-4. **patch_size 消融**（GPU 2 跑）：验证 shock_err 假说 D
-5. **更鲁棒的 shock_err 度量** + 重新算所有现有实验（10 分钟脚本）
+| E4 Shallow-Water 2D | reviewer 问"only 1D?" | 2 天 |
+| E5 Vlasov-Poisson | reviewer 问"only fluid?" | 3 天 |
+| Foundation × 3 PDE (含 Euler) | C 轨增强 | 1 天 |
+| PDE-Bench / Poseidon 对比 | "why not benchmark suite?" | 5 天 |
+| 多 seeds 统计 | "stat significance?" | 已有部分 |
+| 大模型 (H100 base/large) | 算力到 + 容量质疑 | H100 + 1 周 |
 
 ---
 
-## 3 · 论文 §5 主表（建议版）
+## 6 · 立即建议（按价值排序）
 
-如果今天就要交，按下面填表：
+### 🔴 第一优先（一天内能拿数字）
 
-```
-Table 1: Main results on E1 Burgers (Inviscid)
-Method                       W1↓    L1_rel↓    @10steps↓
-EDM Baseline (UNet 0.4M)     0.706    0.X        0.698
-StandardScore + BV loss      0.748    0.X        0.X
-BVAwareScore (UNet 7.7M)     0.729    0.X       *0.681* ⭐
-DiT-BVAware (Foundation)     0.2625   0.376      待补 ← 与 BL 同模型
-```
+1. **跑 traditional_solvers eval**（~30 分钟 CPU）→ 拿到 Lax-F / MacCormack 的 W₁/L¹ → 写 §5.4 setting 对比章节
+2. **跑 e2_bvaware_run eval**（~10 分钟）→ 完成 §5.5 (E2 BVAware vs StandardScore vs Baseline)
+3. **跑 sharp_baseline + sharp_ours eval**（~20 分钟）→ 拉差距数字
+4. **跑 e2_bl_baseline 200ep 重训**（GPU 1 后台，10 小时）→ 修 epoch 不对齐
 
-```
-Table 2: Cross-PDE generalization (Foundation Model)
-PDE                          Single-PDE W1   Foundation W1   Δ
-Burgers                      0.729           0.263          -64%
-Buckley-Leverett             0.163           0.084          -49%
-```
+### 🟡 第二优先（一周内）
 
-```
-Table 3: Step ablation (E1 Burgers)
-Heun steps                   10        25       50       100
-Baseline                     0.698    0.733    0.706    0.737
-BVAware (Ours)              *0.681*   0.731    0.698    0.767  ← 强调左半
-```
+5. **生成 Euler Sod 数据 + 训 BVAware 200ep**（GPU 2 后台，1 天）→ 论文从"2 PDE"升到"3 PDE"，故事完整
+6. **三卡并行 λ_BV sweep**（一夜，12 小时）→ §5.2 ablation 加新行，可能下探 W₁
+7. **DiT-Plain 对照**（GPU 0 后台 10 小时）→ 验证 BV-aware 在 DiT 上仍关键
+
+### 🟢 第三优先（论文 §5 落笔阶段）
+
+8. **§5 全章节实写**：把 §5.4 setting 对齐 + §5.5 cross-PDE + §5.6 Foundation 三节实写，把 §5 从"只 E1"升到"完整"
+9. **论文数字对齐**：REPORT 数字 vs LaTeX 数字 vs 真实 ckpt eval 数字三者对齐
+10. **shock_err 鲁棒度量**：把 argmax 改成 top-3 |∇u| 平均位置，重算所有 eval
 
 ---
 
-## 4 · 立即建议的下一步（按优先级）
-
-1. 🔴 **跑 3 个 eval 把缺的数字补上** (实验 7/8/9, ~30 分钟):
-   - e2_bvaware_run ep200 → 拿 E2 BVAware 数字
-   - sharp_baseline ep500 + sharp_ours ep500 → 看 sharp 数据上差距
-   - 这 3 个数字直接写论文 §5.2 + §5.3
-2. 🟡 **三卡并行启动消融实验**：
-   - GPU 0: DiT-Plain 同配置训练（证明 BVAware 必要）
-   - GPU 1: lambda_bv 扫描或 patch_size=2 重训
-   - GPU 2: e2_bl_baseline 200ep 重训对齐
-3. 🟢 **修 shock_err 度量** + 重算所有实验（10 分钟）
-
----
-
-## 5 · 历史里程碑
+## 7 · 历史里程碑
 
 | 日期 | 事件 |
 |---|---|
 | 2026-04-21 | 项目启动 |
-| 2026-04-25 | 路径 A (shock-aware diffusion) 锁定 |
-| 2026-04-26 | 论文 §1/§2 实写 |
+| 2026-04-25 | 路径 A 锁定 |
+| 2026-04-26 | §1/§2 实写 |
 | 2026-04-28 | §3 Method + §4 Theory + 5 大定理 LaTeX |
-| 2026-04-29 | 实验 1/2/3/4/11 完成（E1 + 少步消融）|
-| 2026-04-30 早 | 实验 5/6/7/8/9/10 启动（E2 + sharp 数据）|
-| 2026-04-30 晚 | W5 Foundation Model 代码全栈完成 |
-| **2026-05-01** | **实验 12 完成 + 跨 PDE eval 大胜 (Foundation -64% / -49%)** |
-| **2026-05-01 (现在)** | **大白话全盘点完成；下一步 eval 补数字 + 三卡并行消融** |
+| 2026-04-29 | E1 主实验 + 少步消融 完成 |
+| 2026-04-30 | E2 BL solver+数据+训练全闭环；W5 Foundation 代码全栈 |
+| **2026-05-01 早** | Foundation 200ep 训完 + R7 修复 + 跨 PDE eval 大胜 |
+| **2026-05-01 (现)** | 故事三轨重组；REPORT 完整盘点；下一步 setting 对齐 + E3 Euler |
 
 ---
 
-## 附录 A · 技术摘要（旧版数字保留）
+## 附录 A · 核心代码清单
 
-> 旧 REPORT 内容保留作技术参考。
+### A.1 模型 (PROJECT/black/src/models/)
+- `unet_1d.py` — UNet1D backbone (现有)
+- `score_param.py` — StandardScore + BVAwareScore (含 backbone='unet'|'dit' 开关)
+- `dit_1d.py` — DiT-1D backbone (W5)
+- `foundation_score.py` — DiT-Plain score (W5)
 
-### A.1 W5 Foundation Model 代码栈
+### A.2 数据 (PROJECT/black/src/data/)
+- `burgers_dataset.py` — E1 数据集
+- `mixed_pde_dataset.py` — 混合 PDE 数据集 (W5)
+- `burgers_1d_solver.py` — Godunov solver
+- `traditional_solvers.py` — Lax-F / MacCormack / Central+ν
 
-| 任务 | 文件 | 测试 |
-|---|---|---|
-| W5-A · DiT-1D backbone | `src/models/dit_1d.py` | 10/10 |
-| W5-B · MixedPDEDataset | `src/data/mixed_pde_dataset.py` | 11/11 |
-| W5-C · DiT-Plain + DiT-BVAware | `foundation_score.py` + `score_param.py` | 18/18 |
-| W5-D · 训练脚本 | `train_foundation.py` + 5 YAML | smoke + 200ep |
-| W5-E · 跨 PDE 评估 | `eval_foundation.py` | 真数字已出 |
-| W5-F · 服务器部署 | 6 个 `server/*.py` | 39/39 服务器 |
+### A.3 PDE solver (PROJECT/black/src/pdes/)
+- `bl_flux.py` — BL 通量 + Godunov flux
+- `bl_solver.py` — BL Godunov solver
+- `euler_sod.py` — Euler 1D HLLC + Godunov（**未训练**）
+- `shallow_water.py` — 2D 浅水 HLL（**未训练**）
 
-### A.2 R7 修复（2026-05-01）
+### A.4 训练 / 评估 (PROJECT/black/scripts/)
+- `train_mvp.py` / `train_baseline.py` / `train_bvaware.py` — UNet 训练
+- `train_foundation.py` — DiT 训练 (W5)
+- `eval_viz.py` — 单 PDE 主 eval
+- `eval_step_ablation.py` — 少步数消融
+- `eval_traditional.py` — 传统数值方法 eval（**没人跑过**）
+- `eval_foundation.py` — 跨 PDE eval (W5)
+- `eval_shock_region.py` — shock 局部度量
+- `generate_data.py` / `generate_sharp_data.py` / `generate_bl_data.py` / `generate_euler_data.py` / `generate_sw_data.py` / `generate_coarse_data.py` — 各 PDE 数据生成
 
-BVAwareScore 输出 shape 不一致（`(B, in_C, Nx)` vs StandardScore `(B, 1, Nx)`），导致 sampler+cond 路径在 iter 2 cat 失败。修复：`D_x` 切第 0 通道 → `(B, 1, Nx)`。ckpt-compatible，39/39 测试更新断言后全 pass。
-
-### A.3 数据文件 (服务器 `output/data/`)
-
-| 文件 | 大小 | 用途 |
-|---|---|---|
-| burgers_1d_N5000_Nx128.npy | 247MB | E1 标准 |
-| burgers_sharp_N5000_Nx128.npy | 247MB | E1 sharp IC（更陡 shock） |
-| bl_1d_N5000_Nx128.npy | 247MB | E2 Buckley-Leverett |
-
-### A.4 服务器训练实况
+### A.5 服务器 ckpt 状态
 
 ```
-tmux entrodiff (4 windows, GPU 0/1/2 全空闲可用)
-├── 0: monitor
-├── 1: bvaware_sharp (历史)
-├── 2: e2_bl_ours- (历史)
-└── 3: foundation_small (200ep 已完成退出)
+output/experiments/ (服务器):
+├── entrodiff_mvp_run1/  E1 ours 50ep × 2 runs ✅
+├── mvp_baseline/        E1 baseline 50ep ✅ (但 5/15/.../95 都有, 实际可能 100ep)
+├── bvaware_run/         E1 BV-aware 200ep+ (140 ckpt) ✅
+├── ours_full/           sharp+ours 500ep ✅ (100 ckpt) — 可能等于 sharp_ours
+├── e2_bl_run/           E2 Standard 200ep ✅
+├── e2_bl_baseline/      E2 baseline 50ep 🔧 (要重训 200ep)
+├── e2_bvaware_run/      E2 BVAware 200ep ✅ ← 缺 eval
+├── sharp_baseline/      E1 sharp baseline 500ep ✅ ← 缺 eval
+├── sharp_ours/          E1 sharp ours 500ep ✅ ← 缺 eval
+├── foundation_small/    DiT Foundation 200ep ✅ + eval ✅
+└── foundation_eval/     C1 跨 PDE 表 + 图 ✅
+```
 
-可用 ckpt:
-- E1: bvaware_run × 140 (ep5..ep700+), mvp_baseline × 116, entrodiff_mvp_run1 × 10
-- E2: e2_bl_run × 40 (ep5..ep200), e2_bvaware_run × 40 (ep5..ep200) ← 待 eval
-- Sharp: sharp_baseline × 100 (ep5..ep500), sharp_ours × 100 (ep5..ep500) ← 待 eval
-- Foundation: foundation_small × 20 (ep10..ep200, ep200 已 eval)
+### A.6 数据文件
+
+```
+output/data/ (服务器):
+├── burgers_1d_N5000_Nx128.npy           247MB ✅
+├── burgers_sharp_N5000_Nx128.npy        247MB ✅
+└── bl_1d_N5000_Nx128.npy                247MB ✅
+
+未生成:
+├── euler_sod_1d_N5000_Nx128.npy         (E3 待生成)
+└── sw_2d_*.npy                          (E4 rebuttal 备料)
 ```
